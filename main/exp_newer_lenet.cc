@@ -69,7 +69,7 @@ int main() {
   Layer* fc7 = new FullyConnected(120, 84);
   Layer* relu7 = new ReLU;
 
-  Layer* fc8 = new FullyConnected(32, 10);
+  Layer* fc8 = new FullyConnected(84, 10);
   Layer* softmax8 = new Softmax;
 
   lenet5.add_layer(conv1);
