@@ -1,0 +1,11 @@
+{
+    "cmake.configureOnOpen": true,
+    "files.associations": {
+        "adolcforward": "cpp",
+        "alignedvector3": "cpp",
+        "fft": "cpp",
+        "mprealsupport": "cpp",
+        "matrixfunctions": "cpp",
+        "openglsupport": "cpp"
+    }
+}
