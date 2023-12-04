@@ -113,17 +113,17 @@ int main() {
         lenet5.check_gradient(x_batch, target_batch, 10);
       }
       lenet5.forward(x_batch);
-      lenet5.backward(x_batch, target_batch);
+      // lenet5.backward(x_batch, target_batch);
       // display
       if (ith_batch % 50 == 0) {
         std::cout << ith_batch << "-th batch, loss: " << lenet5.get_loss()
         << std::endl;
       }
       // optimize
-      lenet5.update(opt);
+      // lenet5.update(opt);
     }
     // test
-    // lenet5.forward(dataset.test_data);
+    lenet5.forward(dataset.test_data);
     float acc = compute_accuracy(lenet5.output(), dataset.test_labels);
     std::cout << std::endl;
     std::cout << epoch + 1 << "-th epoch, test acc: " << acc << std::endl;

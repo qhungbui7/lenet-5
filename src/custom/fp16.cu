@@ -125,42 +125,41 @@ void FP16Conv::forward(const Matrix& bottom) {
   CHECK(cudaMalloc(&g_B, mat_shape));
   CHECK(cudaMalloc(&res, mat_shape));
 
+  Matrix result = (Matrix*)malloc(sizeof(Matrix)); // check 
+  dim3 blockSize(32, 32);
+  dim3 gridSize((height_out * width_out * channel_out) / blockSize.x + 1);
+
   for (int i = 0; i < n_sample; i++) { // optimize this loops
     // im2col
     Matrix data_col;
     im2col(bottom.col(i), data_col);
     data_cols[i] = data_col;
-    // conv by product
-
-
-    // initialize for CUDA
 
     CHECK(cudaMemcpy(g_A, data_col, mat_shape, cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(g_B weight, mat_shape, cudaMemcpyHostToDevice));
 
-
-    dim gridSize(())
-
-    CHECK(cudaMemcpy(result, res, mat_shape, cudaMemcpyDeviceToHost))
-
-    /// dim3 gridSize(1); 
-
-    dim3 gridSize((height_out * width_out - 1) / blockSize.x + 1);
-
-
-    Matrix result = (Matrix*)malloc(sizeof(Matrix));
-
     // result = data_col * weight;  // result: (hw_out, channel_out)
     elementwiseMult<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out, channel_out); 
 
+    CHECK(cudaMemcpy(result, res, mat_shape, cudaMemcpyDeviceToHost));
+
+
     result.rowwise() += bias.transpose();
     top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
+
+
+
+
   }
 
+
+  free(result); 
+  
   CHECK(cudaFree(g_A));
   CHECK(cudaFree(g_B));
   CHECK(cudaFree(res));
 
+  cudaDeviceSynchronize();
 
 }
 
