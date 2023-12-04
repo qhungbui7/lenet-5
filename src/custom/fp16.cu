@@ -115,17 +115,17 @@ void FP16Conv::elementwiseMul(Matrix* A, Matrix*B, Matrix* res, int hw_out, int 
 
 void FP16Conv::forward(const Matrix& bottom) {
   int n_sample = bottom.cols();
-  top.resize(height_out * width_out * channel_out, n_sample);
+  top.resize(height_out * width_out * channel_out, n_sample); // resize
   data_cols.resize(n_sample);
 
   float *g_A, *g_b, *res;
-  size_t mat_shape = sizeof(Matrix);
+  size_t mat_shape = Matrix<float, height_out * width_out, channel_out>; // sizeof(float) * height_out * width_out * channel_out;
+  Matrix *result = new Matrix<float, height_out * width_out, channel_out>; // check 
   
   CHECK(cudaMalloc(&g_A, mat_shape));
   CHECK(cudaMalloc(&g_B, mat_shape));
   CHECK(cudaMalloc(&res, mat_shape));
 
-  Matrix result = (Matrix*)malloc(sizeof(Matrix)); // check 
   dim3 blockSize(32, 32);
   dim3 gridSize((height_out * width_out * channel_out) / blockSize.x + 1);
 
@@ -139,7 +139,7 @@ void FP16Conv::forward(const Matrix& bottom) {
     CHECK(cudaMemcpy(g_B weight, mat_shape, cudaMemcpyHostToDevice));
 
     // result = data_col * weight;  // result: (hw_out, channel_out)
-    elementwiseMult<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out, channel_out); 
+    elementwiseMul<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out, channel_out); 
 
     CHECK(cudaMemcpy(result, res, mat_shape, cudaMemcpyDeviceToHost));
 

@@ -9,7 +9,7 @@
 #include <iostream>
 
 #include "src/layer.h"
-#include "src/layer/conv.h"
+#include "src/custom/fp16_conv.h"
 #include "src/layer/fully_connected.h"
 #include "src/layer/ave_pooling.h"
 #include "src/layer/max_pooling.h"
@@ -47,14 +47,14 @@ int main() {
   // [(W−K+2P)/S]+1
 
   Network lenet5;
-  Layer* conv1 = new Conv(1, 28, 28, 6, 5, 5, 1, 0, 0);
+  Layer* conv1 = new FP16Conv(1, 28, 28, 6, 5, 5, 1, 0, 0);
   Layer* relu1 = new ReLU;
   // (28 - 5 + 2 * 0) / 1 + 1 = 24
 
   Layer* pool2 = new MaxPooling(6, 24, 24, 2, 2, 1);
   // (24 - 2 + 2 * 0) / 1 + 1 = 23
 
-  Layer* conv3 = new Conv(6, 23, 23, 16, 5, 5, 1, 0, 0);
+  Layer* conv3 = new FP16Conv(6, 23, 23, 16, 5, 5, 1, 0, 0);
   Layer* relu3 = new ReLU;
   // (23 - 5 + 2 * 0) / 1 + 1 = 19
 
