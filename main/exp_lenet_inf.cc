@@ -29,7 +29,7 @@ int main() {
   // data
   MNIST dataset("../data/mnist/");
   dataset.read();
-  std::cout << "Newer LeNet-5 implementation" << std::endl;
+  std::cout << "LeNet-5 inference only implementation" << std::endl;
   int n_train = dataset.train_data.cols();
   int dim_in = dataset.train_data.rows();
   std::cout << "mnist train number: " << n_train << std::endl;

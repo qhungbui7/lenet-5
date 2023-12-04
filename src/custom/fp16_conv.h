@@ -49,7 +49,7 @@ class FP16Conv: public Layer {
   int output_dim() { return dim_out; }
 //   std::vector<float> get_parameters() const;
 //   std::vector<float> get_derivatives() const;
-  void set_parameters(const std::vector<float>& param);
+  // void set_parameters(const std::vector<float>& param);
 };
 
 #endif  // SRC_LAYER_CONV_H_

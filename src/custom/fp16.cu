@@ -55,7 +55,7 @@ struct GpuTimer
 
 void FP16Conv::init() {
   height_out = (1 + (height_in - height_kernel + 2 * pad_h) / stride);
-  width_out =   (1 + (width_in - width_kernel + 2 * pad_w) / stride);
+  width_out = (1 + (width_in - width_kernel + 2 * pad_w) / stride);
   dim_out = height_out * width_out * channel_out;
 
   weight.resize(channel_in * height_kernel * width_kernel, channel_out);
@@ -117,36 +117,51 @@ void FP16Conv::forward(const Matrix& bottom) {
   int n_sample = bottom.cols();
   top.resize(height_out * width_out * channel_out, n_sample);
   data_cols.resize(n_sample);
-  for (int i = 0; i < n_sample; i ++) { // optimize this loops
+
+  float *g_A, *g_b, *res;
+  size_t mat_shape = sizeof(Matrix);
+  
+  CHECK(cudaMalloc(&g_A, mat_shape));
+  CHECK(cudaMalloc(&g_B, mat_shape));
+  CHECK(cudaMalloc(&res, mat_shape));
+
+  for (int i = 0; i < n_sample; i++) { // optimize this loops
     // im2col
     Matrix data_col;
     im2col(bottom.col(i), data_col);
     data_cols[i] = data_col;
     // conv by product
 
-    float *g_A, *g_b, *res;
-    size_t mat_shape = sizeof(Matrix);
-    
-    CHECK(cudaMalloc(&g_A, shapeA));
-    CHECK(cudaMalloc(&g_B, shapeB));
-    CHECK(cudaMalloc(&g_C, shapeC));
+
+    // initialize for CUDA
 
     CHECK(cudaMemcpy(g_A, data_col, mat_shape, cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(g_B weight, mat_shape, cudaMemcpyHostToDevice));
 
 
     dim gridSize(())
-    elementwiseMul()
 
-    /// dim3 gridSize(1); // TODO: Compute gridSize
+    CHECK(cudaMemcpy(result, res, mat_shape, cudaMemcpyDeviceToHost))
 
-    dim3 gridSize((m * k - 1) / blockSize.x + 1);
+    /// dim3 gridSize(1); 
+
+    dim3 gridSize((height_out * width_out - 1) / blockSize.x + 1);
 
 
-    Matrix result = data_col * weight;  // result: (hw_out, channel_out)
+    Matrix result = (Matrix*)malloc(sizeof(Matrix));
+
+    // result = data_col * weight;  // result: (hw_out, channel_out)
+    elementwiseMult<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out, channel_out); 
+
     result.rowwise() += bias.transpose();
     top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
   }
+
+  CHECK(cudaFree(g_A));
+  CHECK(cudaFree(g_B));
+  CHECK(cudaFree(res));
+
+
 }
 
 void FP16Conv::forward(const Matrix& bottom) {
