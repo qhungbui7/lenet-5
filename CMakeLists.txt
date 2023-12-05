@@ -11,10 +11,3 @@ add_executable(demo ${DIR_SRCS})
 # 添加链接库
 target_link_libraries(demo MiniDNNLib)
 
-CUDA_ADD_LIBRARY(mylib SHARED
-    src\custom\fp16_conv.cu
-    OPTIONS -arch sm_20
-)
-
-TARGET_LINK_LIBRARIES(mylib ${CUDA_LIBRARIES})
-
