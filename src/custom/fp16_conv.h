@@ -42,14 +42,14 @@ class FP16Conv: public Layer {
   { init(); }
 
   void forward(const Matrix& bottom);
-//   void backward(const Matrix& bottom, const Matrix& grad_top);
-//   void update(Optimizer& opt);
+  void backward(const Matrix& bottom, const Matrix& grad_top);
+  void update(Optimizer& opt);
   void im2col(const Vector& image, Matrix& data_col);
   void col2im(const Matrix& data_col, Vector& image);
   int output_dim() { return dim_out; }
-//   std::vector<float> get_parameters() const;
-//   std::vector<float> get_derivatives() const;
-  // void set_parameters(const std::vector<float>& param);
+  std::vector<float> get_parameters() const;
+  std::vector<float> get_derivatives() const;
+  void set_parameters(const std::vector<float>& param);
 };
 
 #endif  // SRC_LAYER_CONV_H_
