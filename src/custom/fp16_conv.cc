@@ -2,7 +2,7 @@
 #include <math.h>
 #include <iostream>
 
-void Conv::init() {
+void FPConv::init() {
   height_out = (1 + (height_in - height_kernel + 2 * pad_h) / stride);
   width_out =   (1 + (width_in - width_kernel + 2 * pad_w) / stride);
   dim_out = height_out * width_out * channel_out;
@@ -20,7 +20,7 @@ void Conv::init() {
 // im2col, used for bottom
 // image size: Vector (height_in * width_in * channel_in)
 // data_col size: Matrix (hw_out, hw_kernel * channel_in)
-void Conv::im2col(const Vector& image, Matrix& data_col) {
+void FPConv::im2col(const Vector& image, Matrix& data_col) {
   int hw_in = height_in * width_in;
   int hw_kernel = height_kernel * width_kernel;
   int hw_out = height_out * width_out;
@@ -49,7 +49,7 @@ void Conv::im2col(const Vector& image, Matrix& data_col) {
   }
 }
 
-void Conv::forward(const Matrix& bottom) {
+void FPConv::forward(const Matrix& bottom) {
   int n_sample = bottom.cols();
   top.resize(height_out * width_out * channel_out, n_sample);
   data_cols.resize(n_sample);
@@ -68,7 +68,7 @@ void Conv::forward(const Matrix& bottom) {
 // col2im, used for grad_bottom
 // data_col size: Matrix (hw_out, hw_kernel * channel_in)
 // image size: Vector (height_in * width_in * channel_in)
-void Conv::col2im(const Matrix& data_col, Vector& image) {
+void FPConv::col2im(const Matrix& data_col, Vector& image) {
   int hw_in = height_in * width_in;
   int hw_kernel = height_kernel * width_kernel;
   int hw_out = height_out * width_out;
@@ -97,7 +97,7 @@ void Conv::col2im(const Matrix& data_col, Vector& image) {
   }
 }
 
-void Conv::backward(const Matrix& bottom, const Matrix& grad_top) {
+void FPConv::backward(const Matrix& bottom, const Matrix& grad_top) {
   int n_sample = bottom.cols();
   grad_weight.setZero();
   grad_bias.setZero();
@@ -121,7 +121,7 @@ void Conv::backward(const Matrix& bottom, const Matrix& grad_top) {
   }
 }
 
-void Conv::update(Optimizer& opt) {
+void FPConv::update(Optimizer& opt) {
   Vector::AlignedMapType weight_vec(weight.data(), weight.size());
   Vector::AlignedMapType bias_vec(bias.data(), bias.size());
   Vector::ConstAlignedMapType grad_weight_vec(grad_weight.data(), grad_weight.size());
@@ -131,7 +131,7 @@ void Conv::update(Optimizer& opt) {
   opt.update(bias_vec, grad_bias_vec);
 }
 
-std::vector<float> Conv::get_parameters() const {
+std::vector<float> FPConv::get_parameters() const {
   std::vector<float> res(weight.size() + bias.size());
   // Copy the data of weights and bias to a long vector
   std::copy(weight.data(), weight.data() + weight.size(), res.begin());
@@ -139,14 +139,14 @@ std::vector<float> Conv::get_parameters() const {
   return res;
 }
 
-void Conv::set_parameters(const std::vector<float>& param) {
+void FPConv::set_parameters(const std::vector<float>& param) {
   if(static_cast<int>(param.size()) != weight.size() + bias.size())
       throw std::invalid_argument("Parameter size does not match");
   std::copy(param.begin(), param.begin() + weight.size(), weight.data());
   std::copy(param.begin() + weight.size(), param.end(), bias.data());
 }
 
-std::vector<float> Conv::get_derivatives() const {
+std::vector<float> FPConv::get_derivatives() const {
   std::vector<float> res(grad_weight.size() + grad_bias.size());
   // Copy the data of weights and bias to a long vector
   std::copy(grad_weight.data(), grad_weight.data() + grad_weight.size(), res.begin());
