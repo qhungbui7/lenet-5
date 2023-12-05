@@ -15,14 +15,18 @@
 #define ALIGNMENT 1
 #endif
 
+typedef Matrix<float,16,1> Vector16f;
 typedef Matrix<float,8,1> Vector8f;
 
 void check_handmade_aligned_malloc()
 {
+  // Hand-make alignment needs at least sizeof(void*) to store the offset.
+  constexpr int alignment = (std::max<int>)(EIGEN_DEFAULT_ALIGN_BYTES, sizeof(void*));
+  
   for(int i = 1; i < 1000; i++)
   {
-    char *p = (char*)internal::handmade_aligned_malloc(i);
-    VERIFY(internal::UIntPtr(p)%ALIGNMENT==0);
+    char *p = (char*)internal::handmade_aligned_malloc(i, alignment);
+    VERIFY(std::uintptr_t(p)%ALIGNMENT==0);
     // if the buffer is wrongly allocated this will give a bad write --> check with valgrind
     for(int j = 0; j < i; j++) p[j]=0;
     internal::handmade_aligned_free(p);
@@ -34,7 +38,7 @@ void check_aligned_malloc()
   for(int i = ALIGNMENT; i < 1000; i++)
   {
     char *p = (char*)internal::aligned_malloc(i);
-    VERIFY(internal::UIntPtr(p)%ALIGNMENT==0);
+    VERIFY(std::uintptr_t(p)%ALIGNMENT==0);
     // if the buffer is wrongly allocated this will give a bad write --> check with valgrind
     for(int j = 0; j < i; j++) p[j]=0;
     internal::aligned_free(p);
@@ -46,7 +50,7 @@ void check_aligned_new()
   for(int i = ALIGNMENT; i < 1000; i++)
   {
     float *p = internal::aligned_new<float>(i);
-    VERIFY(internal::UIntPtr(p)%ALIGNMENT==0);
+    VERIFY(std::uintptr_t(p)%ALIGNMENT==0);
     // if the buffer is wrongly allocated this will give a bad write --> check with valgrind
     for(int j = 0; j < i; j++) p[j]=0;
     internal::aligned_delete(p,i);
@@ -58,7 +62,7 @@ void check_aligned_stack_alloc()
   for(int i = ALIGNMENT; i < 400; i++)
   {
     ei_declare_aligned_stack_constructed_variable(float,p,i,0);
-    VERIFY(internal::UIntPtr(p)%ALIGNMENT==0);
+    VERIFY(std::uintptr_t(p)%ALIGNMENT==0);
     // if the buffer is wrongly allocated this will give a bad write --> check with valgrind
     for(int j = 0; j < i; j++) p[j]=0;
   }
@@ -70,7 +74,7 @@ struct MyStruct
 {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   char dummychar;
-  Vector8f avec;
+  Vector16f avec;
 };
 
 class MyClassA
@@ -78,7 +82,7 @@ class MyClassA
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     char dummychar;
-    Vector8f avec;
+    Vector16f avec;
 };
 
 template<typename T> void check_dynaligned()
@@ -88,7 +92,7 @@ template<typename T> void check_dynaligned()
   {
     T* obj = new T;
     VERIFY(T::NeedsToAlign==1);
-    VERIFY(internal::UIntPtr(obj)%ALIGNMENT==0);
+    VERIFY(std::uintptr_t(obj)%ALIGNMENT==0);
     delete obj;
   }
 }
@@ -106,7 +110,7 @@ template<typename T> void check_custom_new_delete()
     delete[] t;
   }
   
-#if EIGEN_MAX_ALIGN_BYTES>0
+#if EIGEN_MAX_ALIGN_BYTES>0 && (!EIGEN_HAS_CXX17_OVERALIGN)
   {
     T* t = static_cast<T *>((T::operator new)(sizeof(T)));
     (T::operator delete)(t, sizeof(T));
@@ -119,7 +123,7 @@ template<typename T> void check_custom_new_delete()
 #endif
 }
 
-void test_dynalloc()
+EIGEN_DECLARE_TEST(dynalloc)
 {
   // low level dynamic memory allocation
   CALL_SUBTEST(check_handmade_aligned_malloc());
@@ -145,18 +149,19 @@ void test_dynalloc()
     CALL_SUBTEST(check_dynaligned<Vector4d>() );
     CALL_SUBTEST(check_dynaligned<Vector4i>() );
     CALL_SUBTEST(check_dynaligned<Vector8f>() );
+    CALL_SUBTEST(check_dynaligned<Vector16f>() );
   }
 
   {
-    MyStruct foo0;  VERIFY(internal::UIntPtr(foo0.avec.data())%ALIGNMENT==0);
-    MyClassA fooA;  VERIFY(internal::UIntPtr(fooA.avec.data())%ALIGNMENT==0);
+    MyStruct foo0;  VERIFY(std::uintptr_t(foo0.avec.data())%ALIGNMENT==0);
+    MyClassA fooA;  VERIFY(std::uintptr_t(fooA.avec.data())%ALIGNMENT==0);
   }
   
   // dynamic allocation, single object
   for (int i=0; i<g_repeat*100; ++i)
   {
-    MyStruct *foo0 = new MyStruct();  VERIFY(internal::UIntPtr(foo0->avec.data())%ALIGNMENT==0);
-    MyClassA *fooA = new MyClassA();  VERIFY(internal::UIntPtr(fooA->avec.data())%ALIGNMENT==0);
+    MyStruct *foo0 = new MyStruct();  VERIFY(std::uintptr_t(foo0->avec.data())%ALIGNMENT==0);
+    MyClassA *fooA = new MyClassA();  VERIFY(std::uintptr_t(fooA->avec.data())%ALIGNMENT==0);
     delete foo0;
     delete fooA;
   }
@@ -165,8 +170,8 @@ void test_dynalloc()
   const int N = 10;
   for (int i=0; i<g_repeat*100; ++i)
   {
-    MyStruct *foo0 = new MyStruct[N];  VERIFY(internal::UIntPtr(foo0->avec.data())%ALIGNMENT==0);
-    MyClassA *fooA = new MyClassA[N];  VERIFY(internal::UIntPtr(fooA->avec.data())%ALIGNMENT==0);
+    MyStruct *foo0 = new MyStruct[N];  VERIFY(std::uintptr_t(foo0->avec.data())%ALIGNMENT==0);
+    MyClassA *fooA = new MyClassA[N];  VERIFY(std::uintptr_t(fooA->avec.data())%ALIGNMENT==0);
     delete[] foo0;
     delete[] fooA;
   }

@@ -24,7 +24,6 @@ template<typename MatrixType> void nomalloc(const MatrixType& m)
 {
   /* this test check no dynamic memory allocation are issued with fixed-size matrices
   */
-  typedef typename MatrixType::Index Index;
   typedef typename MatrixType::Scalar Scalar;
 
   Index rows = m.rows();
@@ -153,7 +152,7 @@ void ctms_decompositions()
   x = fpQR.solve(b);
 
   // SVD module
-  Eigen::JacobiSVD<Matrix> jSVD; jSVD.compute(A, ComputeFullU | ComputeFullV);
+  Eigen::JacobiSVD<Matrix, ComputeFullU | ComputeFullV> jSVD; jSVD.compute(A);
 }
 
 void test_zerosized() {
@@ -173,7 +172,7 @@ template<typename MatrixType> void test_reference(const MatrixType& m) {
   typedef typename MatrixType::Scalar Scalar;
   enum { Flag          =  MatrixType::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor};
   enum { TransposeFlag = !MatrixType::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor};
-  typename MatrixType::Index rows = m.rows(), cols=m.cols();
+  Index rows = m.rows(), cols=m.cols();
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Flag         > MatrixX;
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, TransposeFlag> MatrixXT;
   // Dynamic reference:
@@ -203,7 +202,7 @@ template<typename MatrixType> void test_reference(const MatrixType& m) {
 
 }
 
-void test_nomalloc()
+EIGEN_DECLARE_TEST(nomalloc)
 {
   // create some dynamic objects
   Eigen::MatrixXd M1 = MatrixXd::Random(3,3);
@@ -226,4 +225,7 @@ void test_nomalloc()
   CALL_SUBTEST_6(test_reference(Matrix<float,32,32>()));
   CALL_SUBTEST_7(test_reference(R1));
   CALL_SUBTEST_8(Ref<MatrixXd> R2 = M1.topRows<2>(); test_reference(R2));
+
+  // freeing is now possible
+  Eigen::internal::set_is_malloc_allowed(true);
 }

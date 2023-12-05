@@ -7,7 +7,6 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#define EIGEN_NO_STATIC_ASSERT
 #include "product.h"
 #include <Eigen/LU>
 
@@ -41,12 +40,12 @@ const TC& ref_prod(TC &C, const TA &A, const TB &B)
 }
 
 template<typename T, int Rows, int Cols, int Depth, int OC, int OA, int OB>
-typename internal::enable_if<! ( (Rows ==1&&Depth!=1&&OA==ColMajor)
+std::enable_if_t<! ( (Rows ==1&&Depth!=1&&OA==ColMajor)
                               || (Depth==1&&Rows !=1&&OA==RowMajor)
                               || (Cols ==1&&Depth!=1&&OB==RowMajor)
                               || (Depth==1&&Cols !=1&&OB==ColMajor)
                               || (Rows ==1&&Cols !=1&&OC==ColMajor)
-                              || (Cols ==1&&Rows !=1&&OC==RowMajor)),void>::type
+                              || (Cols ==1&&Rows !=1&&OC==RowMajor)),void>
 test_lazy_single(int rows, int cols, int depth)
 {
   Matrix<T,Rows,Depth,OA> A(rows,depth); A.setRandom();
@@ -56,13 +55,37 @@ test_lazy_single(int rows, int cols, int depth)
   VERIFY_IS_APPROX(C+=A.lazyProduct(B), ref_prod(D,A,B));
 }
 
+void test_dynamic_bool()
+{
+  int rows = internal::random<int>(1,64);
+  int cols = internal::random<int>(1,64);
+  int depth = internal::random<int>(1,65);
+
+  typedef Matrix<bool,Dynamic,Dynamic> MatrixX;
+  MatrixX A(rows,depth); A.setRandom();
+  MatrixX B(depth,cols); B.setRandom();
+  MatrixX C(rows,cols);  C.setRandom();
+  MatrixX D(C);
+  for(Index i=0;i<C.rows();++i)
+    for(Index j=0;j<C.cols();++j)
+      for(Index k=0;k<A.cols();++k)
+       D.coeffRef(i,j) |= (A.coeff(i,k) && B.coeff(k,j));
+  C += A * B;
+  VERIFY_IS_EQUAL(C, D);
+
+  MatrixX E = B.transpose();
+  for(Index i=0;i<B.rows();++i)
+    for(Index j=0;j<B.cols();++j)
+      VERIFY_IS_EQUAL(B(i,j), E(j,i));
+}
+
 template<typename T, int Rows, int Cols, int Depth, int OC, int OA, int OB>
-typename internal::enable_if<  ( (Rows ==1&&Depth!=1&&OA==ColMajor)
+std::enable_if_t<  ( (Rows ==1&&Depth!=1&&OA==ColMajor)
                               || (Depth==1&&Rows !=1&&OA==RowMajor)
                               || (Cols ==1&&Depth!=1&&OB==RowMajor)
                               || (Depth==1&&Cols !=1&&OB==ColMajor)
                               || (Rows ==1&&Cols !=1&&OC==ColMajor)
-                              || (Cols ==1&&Rows !=1&&OC==RowMajor)),void>::type
+                              || (Cols ==1&&Rows !=1&&OC==RowMajor)),void>
 test_lazy_single(int, int, int)
 {
 }
@@ -78,7 +101,7 @@ void test_lazy_all_layout(int rows=Rows, int cols=Cols, int depth=Depth)
   CALL_SUBTEST(( test_lazy_single<T,Rows,Cols,Depth,RowMajor,ColMajor,RowMajor>(rows,cols,depth) ));
   CALL_SUBTEST(( test_lazy_single<T,Rows,Cols,Depth,ColMajor,RowMajor,RowMajor>(rows,cols,depth) ));
   CALL_SUBTEST(( test_lazy_single<T,Rows,Cols,Depth,RowMajor,RowMajor,RowMajor>(rows,cols,depth) ));
-}
+}  
 
 template<typename T>
 void test_lazy_l1()
@@ -228,42 +251,9 @@ void bug_1311()
   VERIFY_IS_APPROX(res, A*b);
 }
 
-void test_product_small()
+template<int>
+void product_small_regressions()
 {
-  for(int i = 0; i < g_repeat; i++) {
-    CALL_SUBTEST_1( product(Matrix<float, 3, 2>()) );
-    CALL_SUBTEST_2( product(Matrix<int, 3, 17>()) );
-    CALL_SUBTEST_8( product(Matrix<double, 3, 17>()) );
-    CALL_SUBTEST_3( product(Matrix3d()) );
-    CALL_SUBTEST_4( product(Matrix4d()) );
-    CALL_SUBTEST_5( product(Matrix4f()) );
-    CALL_SUBTEST_6( product1x1<0>() );
-
-    CALL_SUBTEST_11( test_lazy_l1<float>() );
-    CALL_SUBTEST_12( test_lazy_l2<float>() );
-    CALL_SUBTEST_13( test_lazy_l3<float>() );
-
-    CALL_SUBTEST_21( test_lazy_l1<double>() );
-    CALL_SUBTEST_22( test_lazy_l2<double>() );
-    CALL_SUBTEST_23( test_lazy_l3<double>() );
-
-    CALL_SUBTEST_31( test_lazy_l1<std::complex<float> >() );
-    CALL_SUBTEST_32( test_lazy_l2<std::complex<float> >() );
-    CALL_SUBTEST_33( test_lazy_l3<std::complex<float> >() );
-
-    CALL_SUBTEST_41( test_lazy_l1<std::complex<double> >() );
-    CALL_SUBTEST_42( test_lazy_l2<std::complex<double> >() );
-    CALL_SUBTEST_43( test_lazy_l3<std::complex<double> >() );
-
-    CALL_SUBTEST_7(( test_linear_but_not_vectorizable<float,2,1,Dynamic>() ));
-    CALL_SUBTEST_7(( test_linear_but_not_vectorizable<float,3,1,Dynamic>() ));
-    CALL_SUBTEST_7(( test_linear_but_not_vectorizable<float,2,1,16>() ));
-
-    CALL_SUBTEST_6( bug_1311<3>() );
-    CALL_SUBTEST_6( bug_1311<5>() );
-  }
-
-#ifdef EIGEN_TEST_PART_6
   {
     // test compilation of (outer_product) * vector
     Vector3f v = Vector3f::Random();
@@ -289,5 +279,70 @@ void test_product_small()
                 * (((A*A)*(A*A))*((A*A)*(A*A))*((A*A)*(A*A))*((A*A)*(A*A))*((A*A)*(A*A)) * ((A*A)*(A*A))*((A*A)*(A*A))*((A*A)*(A*A))*((A*A)*(A*A))*((A*A)*(A*A)));
     VERIFY_IS_APPROX(B,C);
   }
-#endif
+}
+
+template<typename T>
+void product_sweep(int max_m, int max_k, int max_n) {
+  using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
+  for (int m = 1; m < max_m; ++m) {
+    for (int n = 1; n < max_n; ++n) {
+      Matrix C = Matrix::Zero(m, n);
+      Matrix Cref = Matrix::Zero(m, n);
+      for (int k = 1; k < max_k; ++k) {
+        Matrix A = Matrix::Random(m, k);
+        Matrix B = Matrix::Random(k, n);
+        C = A * B;
+        Cref.setZero();
+        ref_prod(Cref, A, B);
+        VERIFY_IS_APPROX(C, Cref);
+      }
+    }
+  }   
+}
+
+EIGEN_DECLARE_TEST(product_small)
+{
+  for(int i = 0; i < g_repeat; i++) {
+    CALL_SUBTEST_1( product(Matrix<float, 3, 2>()) );
+    CALL_SUBTEST_2( product(Matrix<int, 3, 17>()) );
+    CALL_SUBTEST_8( product(Matrix<double, 3, 17>()) );
+    CALL_SUBTEST_3( product(Matrix3d()) );
+    CALL_SUBTEST_4( product(Matrix4d()) );
+    CALL_SUBTEST_5( product(Matrix4f()) );
+    CALL_SUBTEST_10( product(Matrix<bfloat16, 3, 2>()) );
+    CALL_SUBTEST_6( product1x1<0>() );
+
+    CALL_SUBTEST_11( test_lazy_l1<float>() );
+    CALL_SUBTEST_12( test_lazy_l2<float>() );
+    CALL_SUBTEST_13( test_lazy_l3<float>() );
+
+    CALL_SUBTEST_21( test_lazy_l1<double>() );
+    CALL_SUBTEST_22( test_lazy_l2<double>() );
+    CALL_SUBTEST_23( test_lazy_l3<double>() );
+
+    CALL_SUBTEST_31( test_lazy_l1<std::complex<float> >() );
+    CALL_SUBTEST_32( test_lazy_l2<std::complex<float> >() );
+    CALL_SUBTEST_33( test_lazy_l3<std::complex<float> >() );
+
+    CALL_SUBTEST_41( test_lazy_l1<std::complex<double> >() );
+    CALL_SUBTEST_42( test_lazy_l2<std::complex<double> >() );
+    CALL_SUBTEST_43( test_lazy_l3<std::complex<double> >() );
+
+    CALL_SUBTEST_7(( test_linear_but_not_vectorizable<float,2,1,Dynamic>() ));
+    CALL_SUBTEST_7(( test_linear_but_not_vectorizable<float,3,1,Dynamic>() ));
+    CALL_SUBTEST_7(( test_linear_but_not_vectorizable<float,2,1,16>() ));
+
+    CALL_SUBTEST_6( bug_1311<3>() );
+    CALL_SUBTEST_6( bug_1311<5>() );
+
+    CALL_SUBTEST_9( test_dynamic_bool() );
+    
+    // Commonly specialized vectorized types.
+    CALL_SUBTEST_50( product_sweep<float>(10, 10, 10) );
+    CALL_SUBTEST_51( product_sweep<double>(10, 10, 10) );
+    CALL_SUBTEST_52( product_sweep<Eigen::half>(10, 10, 10) );
+    CALL_SUBTEST_53( product_sweep<Eigen::bfloat16>(10, 10, 10) );
+  }
+
+  CALL_SUBTEST_6( product_small_regressions<0>() );
 }

@@ -12,7 +12,6 @@
 template<typename MatrixType> void matrixVisitor(const MatrixType& p)
 {
   typedef typename MatrixType::Scalar Scalar;
-  typedef typename MatrixType::Index Index;
 
   Index rows = p.rows();
   Index cols = p.cols();
@@ -22,7 +21,7 @@ template<typename MatrixType> void matrixVisitor(const MatrixType& p)
   m = MatrixType::Random(rows, cols);
   for(Index i = 0; i < m.size(); i++)
     for(Index i2 = 0; i2 < i; i2++)
-      while(m(i) == m(i2)) // yes, ==
+      while(numext::equal_strict(m(i), m(i2))) // yes, strict equality
         m(i) = internal::random<Scalar>();
   
   Scalar minc = Scalar(1000), maxc = Scalar(-1000);
@@ -57,15 +56,77 @@ template<typename MatrixType> void matrixVisitor(const MatrixType& p)
   VERIFY_IS_APPROX(maxc, m.maxCoeff());
 
   eigen_maxc = (m.adjoint()*m).maxCoeff(&eigen_maxrow,&eigen_maxcol);
-  eigen_maxc = (m.adjoint()*m).eval().maxCoeff(&maxrow,&maxcol);
-  VERIFY(maxrow == eigen_maxrow);
-  VERIFY(maxcol == eigen_maxcol);
+  Index maxrow2=0,maxcol2=0;
+  eigen_maxc = (m.adjoint()*m).eval().maxCoeff(&maxrow2,&maxcol2);
+  VERIFY(maxrow2 == eigen_maxrow);
+  VERIFY(maxcol2 == eigen_maxcol);
+
+  if (!NumTraits<Scalar>::IsInteger && m.size() > 2) {
+    // Test NaN propagation by replacing an element with NaN.
+    bool stop = false;
+    for (Index j = 0; j < cols && !stop; ++j) {
+      for (Index i = 0; i < rows && !stop; ++i) {
+        if (!(j == mincol && i == minrow) &&
+            !(j == maxcol && i == maxrow)) {
+          m(i,j) = NumTraits<Scalar>::quiet_NaN();
+          stop = true;
+          break;
+        }
+      }
+    }
+
+    eigen_minc = m.template minCoeff<PropagateNumbers>(&eigen_minrow, &eigen_mincol);
+    eigen_maxc = m.template maxCoeff<PropagateNumbers>(&eigen_maxrow, &eigen_maxcol);
+    VERIFY(minrow == eigen_minrow);
+    VERIFY(maxrow == eigen_maxrow);
+    VERIFY(mincol == eigen_mincol);
+    VERIFY(maxcol == eigen_maxcol);
+    VERIFY_IS_APPROX(minc, eigen_minc);
+    VERIFY_IS_APPROX(maxc, eigen_maxc);
+    VERIFY_IS_APPROX(minc, m.template minCoeff<PropagateNumbers>());
+    VERIFY_IS_APPROX(maxc, m.template maxCoeff<PropagateNumbers>());
+
+    eigen_minc = m.template minCoeff<PropagateNaN>(&eigen_minrow, &eigen_mincol);
+    eigen_maxc = m.template maxCoeff<PropagateNaN>(&eigen_maxrow, &eigen_maxcol);
+    VERIFY(minrow != eigen_minrow || mincol != eigen_mincol);
+    VERIFY(maxrow != eigen_maxrow || maxcol != eigen_maxcol);
+    VERIFY((numext::isnan)(eigen_minc));
+    VERIFY((numext::isnan)(eigen_maxc));
+
+    // Test matrix of all NaNs.
+    m.fill(NumTraits<Scalar>::quiet_NaN());
+    eigen_minc = m.template minCoeff<PropagateNumbers>(&eigen_minrow, &eigen_mincol);
+    eigen_maxc = m.template maxCoeff<PropagateNumbers>(&eigen_maxrow, &eigen_maxcol);
+    VERIFY(eigen_minrow == 0);
+    VERIFY(eigen_maxrow == 0);
+    VERIFY(eigen_mincol == 0);
+    VERIFY(eigen_maxcol == 0);
+    VERIFY((numext::isnan)(eigen_minc));
+    VERIFY((numext::isnan)(eigen_maxc));
+
+    eigen_minc = m.template minCoeff<PropagateNaN>(&eigen_minrow, &eigen_mincol);
+    eigen_maxc = m.template maxCoeff<PropagateNaN>(&eigen_maxrow, &eigen_maxcol);
+    VERIFY(eigen_minrow == 0);
+    VERIFY(eigen_maxrow == 0);
+    VERIFY(eigen_mincol == 0);
+    VERIFY(eigen_maxcol == 0);
+    VERIFY((numext::isnan)(eigen_minc));
+    VERIFY((numext::isnan)(eigen_maxc));
+
+    eigen_minc = m.template minCoeff<PropagateFast>(&eigen_minrow, &eigen_mincol);
+    eigen_maxc = m.template maxCoeff<PropagateFast>(&eigen_maxrow, &eigen_maxcol);
+    VERIFY(eigen_minrow == 0);
+    VERIFY(eigen_maxrow == 0);
+    VERIFY(eigen_mincol == 0);
+    VERIFY(eigen_maxcol == 0);
+    VERIFY((numext::isnan)(eigen_minc));
+    VERIFY((numext::isnan)(eigen_maxc));
+  }
 }
 
 template<typename VectorType> void vectorVisitor(const VectorType& w)
 {
   typedef typename VectorType::Scalar Scalar;
-  typedef typename VectorType::Index Index;
 
   Index size = w.size();
 
@@ -113,9 +174,131 @@ template<typename VectorType> void vectorVisitor(const VectorType& w)
   v2.maxCoeff(&eigen_maxidx);
   VERIFY(eigen_minidx == (std::min)(idx0,idx1));
   VERIFY(eigen_maxidx == (std::min)(idx0,idx2));
+
+  if (!NumTraits<Scalar>::IsInteger && size > 2) {
+    // Test NaN propagation by replacing an element with NaN.
+    for (Index i = 0; i < size; ++i) {
+      if (i != minidx && i != maxidx) {
+        v(i) = NumTraits<Scalar>::quiet_NaN();
+        break;
+      }
+    }
+    eigen_minc = v.template minCoeff<PropagateNumbers>(&eigen_minidx);
+    eigen_maxc = v.template maxCoeff<PropagateNumbers>(&eigen_maxidx);
+    VERIFY(minidx == eigen_minidx);
+    VERIFY(maxidx == eigen_maxidx);
+    VERIFY_IS_APPROX(minc, eigen_minc);
+    VERIFY_IS_APPROX(maxc, eigen_maxc);
+    VERIFY_IS_APPROX(minc, v.template minCoeff<PropagateNumbers>());
+    VERIFY_IS_APPROX(maxc, v.template maxCoeff<PropagateNumbers>());
+
+    eigen_minc = v.template minCoeff<PropagateNaN>(&eigen_minidx);
+    eigen_maxc = v.template maxCoeff<PropagateNaN>(&eigen_maxidx);
+    VERIFY(minidx != eigen_minidx);
+    VERIFY(maxidx != eigen_maxidx);
+    VERIFY((numext::isnan)(eigen_minc));
+    VERIFY((numext::isnan)(eigen_maxc));
+  }
 }
 
-void test_visitor()
+template <typename Derived, bool Vectorizable>
+struct TrackedVisitor {
+  using Scalar = typename DenseBase<Derived>::Scalar;
+  static constexpr int PacketSize = Eigen::internal::packet_traits<Scalar>::size;
+  static constexpr bool RowMajor = Derived::IsRowMajor;
+
+  void init(Scalar v, Index i, Index j) { return this->operator()(v, i, j); }
+  template <typename Packet>
+  void initpacket(Packet p, Index i, Index j) {
+    return this->packet(p, i, j);
+  }
+  void operator()(Scalar v, Index i, Index j) {
+    EIGEN_UNUSED_VARIABLE(v)
+    visited.emplace_back(i, j);
+    scalarOps++;
+  }
+
+  template <typename Packet>
+  void packet(Packet p, Index i, Index j) {
+    EIGEN_UNUSED_VARIABLE(p)
+    for (int k = 0; k < PacketSize; k++)
+      if (RowMajor)
+        visited.emplace_back(i, j + k);
+      else
+        visited.emplace_back(i + k, j);
+    vectorOps++;
+  }
+  std::vector<std::pair<Index, Index>> visited;
+  Index scalarOps = 0;
+  Index vectorOps = 0;
+};
+
+namespace Eigen {
+namespace internal {
+
+template<typename T, bool Vectorizable>
+struct functor_traits<TrackedVisitor<T, Vectorizable> > {
+  enum { PacketAccess = Vectorizable, LinearAccess = false, Cost = 1 };
+};
+
+}  // namespace internal
+}  // namespace Eigen
+
+template <typename Derived, bool Vectorized>
+void checkOptimalTraversal_impl(const DenseBase<Derived>& mat) {
+  using Scalar = typename DenseBase<Derived>::Scalar;
+  static constexpr int PacketSize = Eigen::internal::packet_traits<Scalar>::size;
+  static constexpr bool RowMajor = Derived::IsRowMajor;
+  Derived X(mat.rows(), mat.cols());
+  X.setRandom();
+  TrackedVisitor<Derived, Vectorized> visitor;
+  visitor.visited.reserve(X.size());
+  X.visit(visitor);
+  Index count = 0;
+  for (Index j = 0; j < X.outerSize(); ++j) {
+    for (Index i = 0; i < X.innerSize(); ++i) {
+      Index r = RowMajor ? j : i;
+      Index c = RowMajor ? i : j;
+      VERIFY_IS_EQUAL(visitor.visited[count].first, r);
+      VERIFY_IS_EQUAL(visitor.visited[count].second, c);
+      ++count;
+    }
+  }
+  Index vectorOps = Vectorized ? ((X.innerSize() / PacketSize) * X.outerSize()) : 0;
+  Index scalarOps = X.size() - (vectorOps * PacketSize);
+  VERIFY_IS_EQUAL(vectorOps, visitor.vectorOps);
+  VERIFY_IS_EQUAL(scalarOps, visitor.scalarOps);
+}
+
+void checkOptimalTraversal() {
+    
+  using Scalar = float;
+  constexpr int PacketSize = Eigen::internal::packet_traits<Scalar>::size;
+  // use sizes that mix vector and scalar ops
+  constexpr int Rows = 3 * PacketSize + 1;
+  constexpr int Cols = 4 * PacketSize + 1;
+  int rows = internal::random(PacketSize + 1, EIGEN_TEST_MAX_SIZE);
+  int cols = internal::random(PacketSize + 1, EIGEN_TEST_MAX_SIZE);
+
+  using UnrollColMajor = Matrix<Scalar, Rows, Cols, ColMajor>;
+  using UnrollRowMajor = Matrix<Scalar, Rows, Cols, RowMajor>;
+  using DynamicColMajor = Matrix<Scalar, Dynamic, Dynamic, ColMajor>;
+  using DynamicRowMajor = Matrix<Scalar, Dynamic, Dynamic, RowMajor>;
+
+  // Scalar-only visitors
+  checkOptimalTraversal_impl<UnrollColMajor, false>(UnrollColMajor(Rows,Cols));
+  checkOptimalTraversal_impl<UnrollRowMajor, false>(UnrollRowMajor(Rows, Cols));
+  checkOptimalTraversal_impl<DynamicColMajor, false>(DynamicColMajor(rows, cols));
+  checkOptimalTraversal_impl<DynamicRowMajor, false>(DynamicRowMajor(rows, cols));
+
+  // Vectorized visitors
+  checkOptimalTraversal_impl<UnrollColMajor, true>(UnrollColMajor(Rows, Cols));
+  checkOptimalTraversal_impl<UnrollRowMajor, true>(UnrollRowMajor(Rows, Cols));
+  checkOptimalTraversal_impl<DynamicColMajor, true>(DynamicColMajor(rows, cols));
+  checkOptimalTraversal_impl<DynamicRowMajor, true>(DynamicRowMajor(rows, cols));
+}
+
+EIGEN_DECLARE_TEST(visitor)
 {
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( matrixVisitor(Matrix<float, 1, 1>()) );
@@ -132,4 +315,5 @@ void test_visitor()
     CALL_SUBTEST_9( vectorVisitor(RowVectorXd(10)) );
     CALL_SUBTEST_10( vectorVisitor(VectorXf(33)) );
   }
+  CALL_SUBTEST_11(checkOptimalTraversal());
 }

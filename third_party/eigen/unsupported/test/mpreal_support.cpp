@@ -1,3 +1,4 @@
+#include <mpreal.h>  // Must be included before main.h.
 #include "main.h"
 #include <Eigen/MPRealSupport>
 #include <Eigen/LU>
@@ -7,7 +8,7 @@
 using namespace mpfr;
 using namespace Eigen;
 
-void test_mpreal_support()
+EIGEN_DECLARE_TEST(mpreal_support)
 {
   // set precision to 256 bits (double has only 53 bits)
   mpreal::set_default_prec(256);
@@ -19,6 +20,7 @@ void test_mpreal_support()
   std::cerr << "highest =         " << NumTraits<mpreal>::highest() << "\n";
   std::cerr << "lowest =          " << NumTraits<mpreal>::lowest() << "\n";
   std::cerr << "digits10 =        " << NumTraits<mpreal>::digits10() << "\n";
+  std::cerr << "max_digits10 =    " << NumTraits<mpreal>::max_digits10() << "\n";
 
   for(int i = 0; i < g_repeat; i++) {
     int s = Eigen::internal::random<int>(1,100);
