@@ -211,60 +211,60 @@ void FP16Conv::col2im(const Matrix& data_col, Vector& image) {
   }
 }
 
-// void Conv::backward(const Matrix& bottom, const Matrix& grad_top) {
-//   int n_sample = bottom.cols();
-//   grad_weight.setZero();
-//   grad_bias.setZero();
-//   grad_bottom.resize(height_in * width_in * channel_in, n_sample);
-//   grad_bottom.setZero();
-//   for (int i = 0; i < n_sample; i ++) {
-//     // im2col of grad_top
-//     Matrix grad_top_i = grad_top.col(i);
-//     Matrix grad_top_i_col = Eigen::Map<Matrix>(grad_top_i.data(),
-//                               height_out * width_out, channel_out);
-//     // d(L)/d(w) = \sum{ d(L)/d(z_i) * d(z_i)/d(w) }
-//     grad_weight += data_cols[i].transpose() * grad_top_i_col;
-//     // d(L)/d(b) = \sum{ d(L)/d(z_i) * d(z_i)/d(b) }
-//     grad_bias += grad_top_i_col.colwise().sum().transpose();
-//     // d(L)/d(x) = \sum{ d(L)/d(z_i) * d(z_i)/d(x) } = d(L)/d(z)_col * w'
-//     Matrix grad_bottom_i_col = grad_top_i_col * weight.transpose();
-//     // col2im of grad_bottom
-//     Vector grad_bottom_i;
-//     col2im(grad_bottom_i_col, grad_bottom_i);
-//     grad_bottom.col(i) = grad_bottom_i;
-//   }
-// }
+void FP16Conv::backward(const Matrix& bottom, const Matrix& grad_top) {
+  int n_sample = bottom.cols();
+  grad_weight.setZero();
+  grad_bias.setZero();
+  grad_bottom.resize(height_in * width_in * channel_in, n_sample);
+  grad_bottom.setZero();
+  for (int i = 0; i < n_sample; i ++) {
+    // im2col of grad_top
+    Matrix grad_top_i = grad_top.col(i);
+    Matrix grad_top_i_col = Eigen::Map<Matrix>(grad_top_i.data(),
+                              height_out * width_out, channel_out);
+    // d(L)/d(w) = \sum{ d(L)/d(z_i) * d(z_i)/d(w) }
+    grad_weight += data_cols[i].transpose() * grad_top_i_col;
+    // d(L)/d(b) = \sum{ d(L)/d(z_i) * d(z_i)/d(b) }
+    grad_bias += grad_top_i_col.colwise().sum().transpose();
+    // d(L)/d(x) = \sum{ d(L)/d(z_i) * d(z_i)/d(x) } = d(L)/d(z)_col * w'
+    Matrix grad_bottom_i_col = grad_top_i_col * weight.transpose();
+    // col2im of grad_bottom
+    Vector grad_bottom_i;
+    col2im(grad_bottom_i_col, grad_bottom_i);
+    grad_bottom.col(i) = grad_bottom_i;
+  }
+}
 
-// void Conv::update(Optimizer& opt) {
-//   Vector::AlignedMapType weight_vec(weight.data(), weight.size());
-//   Vector::AlignedMapType bias_vec(bias.data(), bias.size());
-//   Vector::ConstAlignedMapType grad_weight_vec(grad_weight.data(), grad_weight.size());
-//   Vector::ConstAlignedMapType grad_bias_vec(grad_bias.data(), grad_bias.size());
+void FP16Conv::update(Optimizer& opt) {
+  Vector::AlignedMapType weight_vec(weight.data(), weight.size());
+  Vector::AlignedMapType bias_vec(bias.data(), bias.size());
+  Vector::ConstAlignedMapType grad_weight_vec(grad_weight.data(), grad_weight.size());
+  Vector::ConstAlignedMapType grad_bias_vec(grad_bias.data(), grad_bias.size());
 
-//   opt.update(weight_vec, grad_weight_vec);
-//   opt.update(bias_vec, grad_bias_vec);
-// }
+  opt.update(weight_vec, grad_weight_vec);
+  opt.update(bias_vec, grad_bias_vec);
+}
 
-// std::vector<float> Conv::get_parameters() const {
-//   std::vector<float> res(weight.size() + bias.size());
-//   // Copy the data of weights and bias to a long vector
-//   std::copy(weight.data(), weight.data() + weight.size(), res.begin());
-//   std::copy(bias.data(), bias.data() + bias.size(), res.begin() + weight.size());
-//   return res;
-// }
+std::vector<float> FP16Conv::get_parameters() const {
+  std::vector<float> res(weight.size() + bias.size());
+  // Copy the data of weights and bias to a long vector
+  std::copy(weight.data(), weight.data() + weight.size(), res.begin());
+  std::copy(bias.data(), bias.data() + bias.size(), res.begin() + weight.size());
+  return res;
+}
 
-// void Conv::set_parameters(const std::vector<float>& param) {
-//   if(static_cast<int>(param.size()) != weight.size() + bias.size())
-//       throw std::invalid_argument("Parameter size does not match");
-//   std::copy(param.begin(), param.begin() + weight.size(), weight.data());
-//   std::copy(param.begin() + weight.size(), param.end(), bias.data());
-// }
+void FP16Conv::set_parameters(const std::vector<float>& param) {
+  if(static_cast<int>(param.size()) != weight.size() + bias.size())
+      throw std::invalid_argument("Parameter size does not match");
+  std::copy(param.begin(), param.begin() + weight.size(), weight.data());
+  std::copy(param.begin() + weight.size(), param.end(), bias.data());
+}
 
-// std::vector<float> Conv::get_derivatives() const {
-//   std::vector<float> res(grad_weight.size() + grad_bias.size());
-//   // Copy the data of weights and bias to a long vector
-//   std::copy(grad_weight.data(), grad_weight.data() + grad_weight.size(), res.begin());
-//   std::copy(grad_bias.data(), grad_bias.data() + grad_bias.size(),
-//             res.begin() + grad_weight.size());
-//   return res;
-// }
+std::vector<float> FP16Conv::get_derivatives() const {
+  std::vector<float> res(grad_weight.size() + grad_bias.size());
+  // Copy the data of weights and bias to a long vector
+  std::copy(grad_weight.data(), grad_weight.data() + grad_weight.size(), res.begin());
+  std::copy(grad_bias.data(), grad_bias.data() + grad_bias.size(),
+            res.begin() + grad_weight.size());
+  return res;
+}
