@@ -2,60 +2,9 @@
 #include <math.h>
 #include <iostream>
 
-#include <stdio.h>
-
-#define CHECK(call)\
-{\
-	const cudaError_t error = call;\
-	if (error != cudaSuccess)\
-	{\
-		fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);\
-		fprintf(stderr, "code: %d, reason: %s\n", error,\
-				cudaGetErrorString(error));\
-		exit(EXIT_FAILURE);\
-	}\
-}
-#define TILE_WIDTH 32
-struct GpuTimer
-{
-    cudaEvent_t start;
-    cudaEvent_t stop;
-
-    GpuTimer()
-    {
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
-    }
-
-    ~GpuTimer()
-    {
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
-    }
-
-    void Start()
-    {
-        cudaEventRecord(start, 0);
-        cudaEventSynchronize(start);
-    }
-
-    void Stop()
-    {
-        cudaEventRecord(stop, 0);
-    }
-
-    float Elapsed()
-    {
-        float elapsed;
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsed, start, stop);
-        return elapsed;
-    }
-};
-
-void FP16Conv::init() {
+void Conv::init() {
   height_out = (1 + (height_in - height_kernel + 2 * pad_h) / stride);
-  width_out = (1 + (width_in - width_kernel + 2 * pad_w) / stride);
+  width_out =   (1 + (width_in - width_kernel + 2 * pad_w) / stride);
   dim_out = height_out * width_out * channel_out;
 
   weight.resize(channel_in * height_kernel * width_kernel, channel_out);
@@ -71,9 +20,7 @@ void FP16Conv::init() {
 // im2col, used for bottom
 // image size: Vector (height_in * width_in * channel_in)
 // data_col size: Matrix (hw_out, hw_kernel * channel_in)
-
-
-void FP16Conv::im2col(const Vector& image, Matrix& data_col) {
+void Conv::im2col(const Vector& image, Matrix& data_col) {
   int hw_in = height_in * width_in;
   int hw_kernel = height_kernel * width_kernel;
   int hw_out = height_out * width_out;
@@ -102,68 +49,7 @@ void FP16Conv::im2col(const Vector& image, Matrix& data_col) {
   }
 }
 
-void FP16Conv::elementwiseMul(Matrix* A, Matrix*B, Matrix* res, int hw_out, int channel_out){
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-    int row = idx / hw_out;
-    int col = idx % hw_out;
-    if (row < hw_out){
-        res[idx] = A[row][col] * B[row][col]; 
-    }
-
-}
-
-void FP16Conv::forward(const Matrix& bottom) {
-  int n_sample = bottom.cols();
-  top.resize(height_out * width_out * channel_out, n_sample); // resize
-  data_cols.resize(n_sample);
-
-  float *g_A, *g_b, *res;
-  size_t mat_shape = Matrix<float, height_out * width_out, channel_out>; // sizeof(float) * height_out * width_out * channel_out;
-  Matrix *result = new Matrix<float, height_out * width_out, channel_out>; // check 
-  
-  CHECK(cudaMalloc(&g_A, mat_shape));
-  CHECK(cudaMalloc(&g_B, mat_shape));
-  CHECK(cudaMalloc(&res, mat_shape));
-
-  dim3 blockSize(32, 32);
-  dim3 gridSize((height_out * width_out * channel_out) / blockSize.x + 1);
-
-  for (int i = 0; i < n_sample; i++) { // optimize this loops
-    // im2col
-    Matrix data_col;
-    im2col(bottom.col(i), data_col);
-    data_cols[i] = data_col;
-
-    CHECK(cudaMemcpy(g_A, data_col, mat_shape, cudaMemcpyHostToDevice));
-    CHECK(cudaMemcpy(g_B weight, mat_shape, cudaMemcpyHostToDevice));
-
-    // result = data_col * weight;  // result: (hw_out, channel_out)
-    elementwiseMul<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out, channel_out); 
-
-    CHECK(cudaMemcpy(result, res, mat_shape, cudaMemcpyDeviceToHost));
-
-
-    result.rowwise() += bias.transpose();
-    top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
-
-
-
-
-  }
-
-
-  free(result); 
-  
-  CHECK(cudaFree(g_A));
-  CHECK(cudaFree(g_B));
-  CHECK(cudaFree(res));
-
-  cudaDeviceSynchronize();
-
-}
-
-void FP16Conv::forward(const Matrix& bottom) {
+void Conv::forward(const Matrix& bottom) {
   int n_sample = bottom.cols();
   top.resize(height_out * width_out * channel_out, n_sample);
   data_cols.resize(n_sample);
@@ -182,7 +68,7 @@ void FP16Conv::forward(const Matrix& bottom) {
 // col2im, used for grad_bottom
 // data_col size: Matrix (hw_out, hw_kernel * channel_in)
 // image size: Vector (height_in * width_in * channel_in)
-void FP16Conv::col2im(const Matrix& data_col, Vector& image) {
+void Conv::col2im(const Matrix& data_col, Vector& image) {
   int hw_in = height_in * width_in;
   int hw_kernel = height_kernel * width_kernel;
   int hw_out = height_out * width_out;
@@ -211,7 +97,7 @@ void FP16Conv::col2im(const Matrix& data_col, Vector& image) {
   }
 }
 
-void FP16Conv::backward(const Matrix& bottom, const Matrix& grad_top) {
+void Conv::backward(const Matrix& bottom, const Matrix& grad_top) {
   int n_sample = bottom.cols();
   grad_weight.setZero();
   grad_bias.setZero();
@@ -235,7 +121,7 @@ void FP16Conv::backward(const Matrix& bottom, const Matrix& grad_top) {
   }
 }
 
-void FP16Conv::update(Optimizer& opt) {
+void Conv::update(Optimizer& opt) {
   Vector::AlignedMapType weight_vec(weight.data(), weight.size());
   Vector::AlignedMapType bias_vec(bias.data(), bias.size());
   Vector::ConstAlignedMapType grad_weight_vec(grad_weight.data(), grad_weight.size());
@@ -245,7 +131,7 @@ void FP16Conv::update(Optimizer& opt) {
   opt.update(bias_vec, grad_bias_vec);
 }
 
-std::vector<float> FP16Conv::get_parameters() const {
+std::vector<float> Conv::get_parameters() const {
   std::vector<float> res(weight.size() + bias.size());
   // Copy the data of weights and bias to a long vector
   std::copy(weight.data(), weight.data() + weight.size(), res.begin());
@@ -253,14 +139,14 @@ std::vector<float> FP16Conv::get_parameters() const {
   return res;
 }
 
-void FP16Conv::set_parameters(const std::vector<float>& param) {
+void Conv::set_parameters(const std::vector<float>& param) {
   if(static_cast<int>(param.size()) != weight.size() + bias.size())
       throw std::invalid_argument("Parameter size does not match");
   std::copy(param.begin(), param.begin() + weight.size(), weight.data());
   std::copy(param.begin() + weight.size(), param.end(), bias.data());
 }
 
-std::vector<float> FP16Conv::get_derivatives() const {
+std::vector<float> Conv::get_derivatives() const {
   std::vector<float> res(grad_weight.size() + grad_bias.size());
   // Copy the data of weights and bias to a long vector
   std::copy(grad_weight.data(), grad_weight.data() + grad_weight.size(), res.begin());
