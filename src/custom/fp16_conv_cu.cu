@@ -120,7 +120,7 @@ void FP16Conv::elementwiseMul(Matrix* A, Matrix*B, Matrix* res, int hw_out){
 
 void FP16Conv::forward(const Matrix& bottom) {
   int n_sample = bottom.cols();
-  printf("%d\n", channel_out)
+  printf("%d\n", channel_out);
   top.resize(height_out * width_out * channel_out, n_sample); // resize
   data_cols.resize(n_sample);
 
