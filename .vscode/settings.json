@@ -6,6 +6,8 @@
         "fft": "cpp",
         "mprealsupport": "cpp",
         "matrixfunctions": "cpp",
-        "openglsupport": "cpp"
+        "openglsupport": "cpp",
+        "nnls": "cpp",
+        "random": "cpp"
     }
 }
