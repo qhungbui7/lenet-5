@@ -130,7 +130,7 @@ void FP16Conv::forward(const Matrix& bottom) {
 
   printf("bottom %d %d", bottom.rows(), bottom.cols());
   printf("top %d %d", top.rows(), top.cols());
-  printf("data_cols %d %d", data_cols.rows(), data_cols.cols());
+  // printf("data_cols %d %d", data_cols.rows(), data_cols.cols());
 
 
   // float *bottom_d = bottom.data();  
