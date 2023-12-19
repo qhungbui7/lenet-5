@@ -119,8 +119,9 @@ void FP16Conv::forward(const Matrix& bottom) {
   data_cols.resize(n_sample);
 
   float *g_A, *g_B, *res;
-  size_t mat_shape = sizeof(Matrix<float, height_out * width_out, channel_out>); // sizeof(float) * height_out * width_out * channel_out;
-  Matrix *result = new Matrix<float, height_out * width_out, channel_out>; // check 
+  const int hw = height_out * width_out;
+  size_t mat_shape = sizeof(Matrix<float, hw, channel_out>); // sizeof(float) * height_out * width_out * channel_out;
+  Matrix *result = new Matrix<float, mat_shape, channel_out>; // check 
   
   CHECK(cudaMalloc(&g_A, mat_shape));
   CHECK(cudaMalloc(&g_B, mat_shape));
