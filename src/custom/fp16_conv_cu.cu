@@ -108,7 +108,7 @@ void FP16Conv::elementwiseMul(Matrix* A, Matrix*B, Matrix* res, int hw_out){
     int row = idx / hw_out;
     int col = idx % hw_out;
     if (row < hw_out){
-        res[idx] = A[row][col] * B[row][col]; 
+        res[row][col] = A[row][col] * B[row][col]; 
     }
 
 }
