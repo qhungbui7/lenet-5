@@ -136,7 +136,7 @@ void FP16Conv::forward(const Matrix& bottom) {
     data_cols[i] = data_col;
 
     CHECK(cudaMemcpy(g_A, data_col, mat_shape, cudaMemcpyHostToDevice));
-    CHECK(cudaMemcpy(g_B weight, mat_shape, cudaMemcpyHostToDevice));
+    CHECK(cudaMemcpy(g_B, weight, mat_shape, cudaMemcpyHostToDevice));
 
     // result = data_col * weight;  // result: (hw_out, channel_out)
     elementwiseMul<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out, channel_out); 
