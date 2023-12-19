@@ -124,10 +124,21 @@ void FP16Conv::forward(const Matrix& bottom) {
   top.resize(height_out * width_out * channel_out, n_sample); // resize
   data_cols.resize(n_sample);
 
+  Matrix *device_matrix = new Matrix;  
+
   float *g_A, *g_B, *res;
-  const int hw = height_out * width_out;
-  size_t mat_shape = sizeof(Matrix<float, HEIGHT * WIDTH, NUM_CHANNELS>); // sizeof(float) * height_out * width_out * channel_out;
-  Matrix *result = new Matrix<float, mat_shape, NUM_CHANNELS>; // check 
+
+  printf("bottom %d %d", bottom.rows(), bottom.cols());
+  printf("top %d %d", top.rows(), top.cols());
+  printf("data_cols %d %d", data_cols.rows(), data_cols.cols());
+
+
+  float *bottom_d = bottom.data();  
+  float *top_d = top.data(); // height_out * width_out * channel_out, n_sample 
+
+
+
+  Matrix *result = new Matrix; // check 
   
   CHECK(cudaMalloc(&g_A, mat_shape));
   CHECK(cudaMalloc(&g_B, mat_shape));
