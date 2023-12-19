@@ -119,18 +119,18 @@ void FP16Conv::elementwiseMul(Matrix* A, Matrix*B, Matrix* res, int hw_out){
 }
 
 void FP16Conv::forward(const Matrix& bottom) {
-  int n_sample = bottom.cols();
-  printf("%d\n", channel_out);
-  top.resize(height_out * width_out * channel_out, n_sample); // resize
-  data_cols.resize(n_sample);
+  // int n_sample = bottom.cols();
+  // printf("%d\n", channel_out);
+  // top.resize(height_out * width_out * channel_out, n_sample); // resize
+  // data_cols.resize(n_sample);
 
-  // Matrix *device_matrix = new Matrix;  
+  // // Matrix *device_matrix = new Matrix;  
 
-  // float *g_A, *g_B, *res;
+  // // float *g_A, *g_B, *res;
 
-  printf("bottom %d %d", bottom.rows(), bottom.cols());
-  printf("top %d %d", top.rows(), top.cols());
-  
+  // printf("bottom %d %d", bottom.rows(), bottom.cols());
+  // printf("top %d %d", top.rows(), top.cols());
+
   // printf("data_cols %d %d", data_cols.rows(), data_cols.cols());
 
 
@@ -179,6 +179,13 @@ void FP16Conv::forward(const Matrix& bottom) {
   // CHECK(cudaFree(res));
 
   // cudaDeviceSynchronize();
+
+  int n_sample = bottom.cols();
+  top.resize(height_out * width_out * channel_out, n_sample);
+  data_cols.resize(n_sample);
+
+  // printf("bottom %d %d", bottom.rows(), bottom.cols());
+  // printf("top %d %d", top.rows(), top.cols());
 
   for (int i = 0; i < n_sample; i ++) {
     // im2col
