@@ -1,4 +1,4 @@
-#include "fp16_conv.h"
+#include "fp16_conv_cu.h"
 #include <math.h>
 #include <iostream>
 
@@ -102,7 +102,7 @@ void FP16Conv::im2col(const Vector& image, Matrix& data_col) {
   }
 }
 
-void FP16Conv::elementwiseMul(Matrix* A, Matrix*B, Matrix* res, int hw_out, int channel_out){
+void FP16Conv::elementwiseMul(Matrix* A, Matrix*B, Matrix* res, int hw_out){
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     int row = idx / hw_out;
@@ -163,21 +163,6 @@ void FP16Conv::forward(const Matrix& bottom) {
 
 }
 
-void FP16Conv::forward(const Matrix& bottom) {
-  int n_sample = bottom.cols();
-  top.resize(height_out * width_out * channel_out, n_sample);
-  data_cols.resize(n_sample);
-  for (int i = 0; i < n_sample; i ++) {
-    // im2col
-    Matrix data_col;
-    im2col(bottom.col(i), data_col);
-    data_cols[i] = data_col;
-    // conv by product
-    Matrix result = data_col * weight;  // result: (hw_out, channel_out)
-    result.rowwise() += bias.transpose();
-    top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
-  }
-}
 
 // col2im, used for grad_bottom
 // data_col size: Matrix (hw_out, hw_kernel * channel_in)
