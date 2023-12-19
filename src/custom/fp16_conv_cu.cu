@@ -124,60 +124,60 @@ void FP16Conv::forward(const Matrix& bottom) {
   top.resize(height_out * width_out * channel_out, n_sample); // resize
   data_cols.resize(n_sample);
 
-  Matrix *device_matrix = new Matrix;  
+  // Matrix *device_matrix = new Matrix;  
 
-  float *g_A, *g_B, *res;
+  // float *g_A, *g_B, *res;
 
   printf("bottom %d %d", bottom.rows(), bottom.cols());
   printf("top %d %d", top.rows(), top.cols());
   printf("data_cols %d %d", data_cols.rows(), data_cols.cols());
 
 
-  float *bottom_d = bottom.data();  
-  float *top_d = top.data(); // height_out * width_out * channel_out, n_sample 
+  // float *bottom_d = bottom.data();  
+  // float *top_d = top.data(); // height_out * width_out * channel_out, n_sample 
 
 
 
-  Matrix *result = new Matrix; // check 
+  // Matrix *result = new Matrix; // check 
   
-  CHECK(cudaMalloc(&g_A, mat_shape));
-  CHECK(cudaMalloc(&g_B, mat_shape));
-  CHECK(cudaMalloc(&res, mat_shape));
+  // CHECK(cudaMalloc(&g_A, mat_shape));
+  // CHECK(cudaMalloc(&g_B, mat_shape));
+  // CHECK(cudaMalloc(&res, mat_shape));
 
-  dim3 blockSize(32, 32);
-  dim3 gridSize((height_out * width_out * channel_out) / blockSize.x + 1);
+  // dim3 blockSize(32, 32);
+  // dim3 gridSize((height_out * width_out * channel_out) / blockSize.x + 1);
 
-  for (int i = 0; i < n_sample; i++) { // optimize this loops
-    // im2col
-    Matrix data_col;
-    im2col(bottom.col(i), data_col);
-    data_cols[i] = data_col;
+  // for (int i = 0; i < n_sample; i++) { // optimize this loops
+  //   // im2col
+  //   Matrix data_col;
+  //   im2col(bottom.col(i), data_col);
+  //   data_cols[i] = data_col;
 
-    CHECK(cudaMemcpy(g_A, data_col, mat_shape, cudaMemcpyHostToDevice));
-    CHECK(cudaMemcpy(g_B, weight, mat_shape, cudaMemcpyHostToDevice));
+  //   CHECK(cudaMemcpy(g_A, data_col, mat_shape, cudaMemcpyHostToDevice));
+  //   CHECK(cudaMemcpy(g_B, weight, mat_shape, cudaMemcpyHostToDevice));
 
-    // result = data_col * weight;  // result: (hw_out, channel_out)
-    elementwiseMul<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out); 
+  //   // result = data_col * weight;  // result: (hw_out, channel_out)
+  //   elementwiseMul<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out); 
 
-    CHECK(cudaMemcpy(result, res, mat_shape, cudaMemcpyDeviceToHost));
-
-
-    result.rowwise() += bias.transpose();
-    top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
+  //   CHECK(cudaMemcpy(result, res, mat_shape, cudaMemcpyDeviceToHost));
 
 
+  //   result.rowwise() += bias.transpose();
+  //   top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
 
 
-  }
 
 
-  free(result); 
+  // }
+
+
+  // free(result); 
   
-  CHECK(cudaFree(g_A));
-  CHECK(cudaFree(g_B));
-  CHECK(cudaFree(res));
+  // CHECK(cudaFree(g_A));
+  // CHECK(cudaFree(g_B));
+  // CHECK(cudaFree(res));
 
-  cudaDeviceSynchronize();
+  // cudaDeviceSynchronize();
 
 }
 
