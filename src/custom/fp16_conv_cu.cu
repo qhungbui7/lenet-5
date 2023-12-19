@@ -130,6 +130,7 @@ void FP16Conv::forward(const Matrix& bottom) {
 
   printf("bottom %d %d", bottom.rows(), bottom.cols());
   printf("top %d %d", top.rows(), top.cols());
+  
   // printf("data_cols %d %d", data_cols.rows(), data_cols.cols());
 
 
@@ -178,6 +179,17 @@ void FP16Conv::forward(const Matrix& bottom) {
   // CHECK(cudaFree(res));
 
   // cudaDeviceSynchronize();
+
+  for (int i = 0; i < n_sample; i ++) {
+    // im2col
+    Matrix data_col;
+    im2col(bottom.col(i), data_col);
+    data_cols[i] = data_col;
+    // conv by product
+    Matrix result = data_col * weight;  // result: (hw_out, channel_out)
+    result.rowwise() += bias.transpose();
+    top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
+  }
 
 }
 
