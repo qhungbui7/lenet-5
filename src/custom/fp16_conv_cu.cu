@@ -1,3 +1,8 @@
+#define HEIGHT 32
+#define WIDTH 32
+#define NUM_CHANNELS 3
+
+
 #include "fp16_conv_cu.h"
 #include <math.h>
 #include <iostream>
@@ -120,8 +125,8 @@ void FP16Conv::forward(const Matrix& bottom) {
 
   float *g_A, *g_B, *res;
   const int hw = height_out * width_out;
-  size_t mat_shape = sizeof(Matrix<float, hw, channel_out>); // sizeof(float) * height_out * width_out * channel_out;
-  Matrix *result = new Matrix<float, mat_shape, channel_out>; // check 
+  size_t mat_shape = sizeof(Matrix<float, HEIGHT * WIDTH, NUM_CHANNELS>); // sizeof(float) * height_out * width_out * channel_out;
+  Matrix *result = new Matrix<float, mat_shape, NUM_CHANNELS>; // check 
   
   CHECK(cudaMalloc(&g_A, mat_shape));
   CHECK(cudaMalloc(&g_B, mat_shape));
