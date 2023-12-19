@@ -118,7 +118,7 @@ void FP16Conv::forward(const Matrix& bottom) {
   top.resize(height_out * width_out * channel_out, n_sample); // resize
   data_cols.resize(n_sample);
 
-  float *g_A, *g_b, *res;
+  float *g_A, *g_B, *res;
   size_t mat_shape = sizeof(Matrix<float, height_out * width_out, channel_out>); // sizeof(float) * height_out * width_out * channel_out;
   Matrix *result = new Matrix<float, height_out * width_out, channel_out>; // check 
   
