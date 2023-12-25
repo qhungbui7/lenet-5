@@ -9,8 +9,8 @@ Please read this:
 - https://stackoverflow.com/questions/28163022/merge-two-remote-branches-in-a-git-repository 
 
 Done ?
-- FP16: constant + tiled fp16
+- FP16: constant + tiled fp16: current
 - Constant-mem:  
 - Restrict unroll: 
-- Stream: (constant + titled + restrict/unroll + stream) : current
+- Stream: (constant + titled + restrict/unroll + stream) : done
 - Tiled (constant + tiled ): done
