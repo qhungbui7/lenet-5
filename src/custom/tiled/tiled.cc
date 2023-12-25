@@ -1,8 +1,8 @@
-#include "titled.h"
+#include "tiled.h"
 #include <math.h>
 #include <iostream>
 
-void Titled::init()
+void Tiled::init()
 {
   height_out = (1 + (height_in - height_kernel + 2 * pad_h) / stride);
   width_out = (1 + (width_in - width_kernel + 2 * pad_w) / stride);
@@ -19,7 +19,7 @@ void Titled::init()
   //  gpuInterface.get_device_properties();
 }
 
-void Titled::forward(const Matrix &bottom)
+void Tiled::forward(const Matrix &bottom)
 {
   int n_sample = bottom.cols();
   top.resize(height_out * width_out * channel_out, n_sample);
@@ -54,15 +54,15 @@ void Titled::forward(const Matrix &bottom)
   // gpuUtils.insert_post_barrier_kernel();
 }
 
-void Titled::backward(const Matrix &bottom, const Matrix &grad_top)
+void Tiled::backward(const Matrix &bottom, const Matrix &grad_top)
 {
 }
 
-void Titled::update(Optimizer &opt)
+void Tiled::update(Optimizer &opt)
 {
 }
 
-std::vector<float> Titled::get_parameters() const
+std::vector<float> Tiled::get_parameters() const
 {
   std::vector<float> res(weight.size() + bias.size());
   // Copy the data of weights and bias to a long vector
@@ -71,7 +71,7 @@ std::vector<float> Titled::get_parameters() const
   return res;
 }
 
-void Titled::set_parameters(const std::vector<float> &param)
+void Tiled::set_parameters(const std::vector<float> &param)
 {
   if (static_cast<int>(param.size()) != weight.size() + bias.size())
     throw std::invalid_argument("Parameter size does not match");
@@ -79,7 +79,7 @@ void Titled::set_parameters(const std::vector<float> &param)
   std::copy(param.begin() + weight.size(), param.end(), bias.data());
 }
 
-std::vector<float> Titled::get_derivatives() const
+std::vector<float> Tiled::get_derivatives() const
 {
   std::vector<float> res(grad_weight.size() + grad_bias.size());
   // Copy the data of weights and bias to a long vector

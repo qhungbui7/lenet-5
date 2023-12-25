@@ -1,14 +1,14 @@
-#ifndef SRC_TITLED_H_
-#define SRC_TITLED_H_
+#ifndef SRC_TILED_H_
+#define SRC_TILED_H_
 
 #include <vector>
 #include <chrono>
 #include "../../layer.h"
 #include <cuda_runtime_api.h>
-#include "gpu_titled.h"
+#include "gpu_tiled.h"
 // #include "./hide/gpu-utils.h"
 
-class Titled : public Layer
+class Tiled : public Layer
 {
 private:
      const int dim_in;
@@ -34,7 +34,7 @@ private:
 
      std::vector<Matrix> data_cols;
 
-     GPUTitledInterface gpuInterface;
+     GPUTiledInterface gpuInterface;
 
      void init();
 

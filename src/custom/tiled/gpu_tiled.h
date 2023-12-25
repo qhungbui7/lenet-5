@@ -1,7 +1,7 @@
-#ifndef SRC_GPU_TITLED_H
-#define SRC_GPU_TITLED_H
+#ifndef SRC_GPU_TILED_H
+#define SRC_GPU_TILED_H
 
-class GPUTitledInterface
+class GPUTiledInterface
 {
 public:
     void get_device_properties();

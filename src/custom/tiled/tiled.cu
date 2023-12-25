@@ -120,7 +120,7 @@ __global__ void conv_forward_kernel(float* y,
 #undef k3d
 }
 
-__host__ void GPUTitledInterface::conv_forward_gpu_prolog(const float* host_y,
+__host__ void GPUTiledInterface::conv_forward_gpu_prolog(const float* host_y,
                                                     const float* host_x,
                                                     const float* host_k,
                                                     float** device_y_ptr,
@@ -151,7 +151,7 @@ __host__ void GPUTitledInterface::conv_forward_gpu_prolog(const float* host_y,
   cudaErrChk(cudaMemcpyToSymbol(kernel, host_k, bytes_k));
 }
 
-__host__ void GPUTitledInterface::conv_forward_gpu(float* device_y,
+__host__ void GPUTiledInterface::conv_forward_gpu(float* device_y,
                                              const float* device_x,
                                              const float* device_k,
                                              const int B,
@@ -184,7 +184,7 @@ __host__ void GPUTitledInterface::conv_forward_gpu(float* device_y,
   cudaErrChk(cudaDeviceSynchronize());
 }
 
-__host__ void GPUTitledInterface::conv_forward_gpu_epilog(float* host_y,
+__host__ void GPUTiledInterface::conv_forward_gpu_epilog(float* host_y,
                                                     float* device_y,
                                                     float* device_x,
                                                     float* device_k,
@@ -206,7 +206,7 @@ __host__ void GPUTitledInterface::conv_forward_gpu_epilog(float* host_y,
   cudaErrChk(cudaFree(device_x));
 }
 
-__host__ void GPUTitledInterface::get_device_properties() {
+__host__ void GPUTiledInterface::get_device_properties() {
   int deviceCount;
   cudaGetDeviceCount(&deviceCount);
 
