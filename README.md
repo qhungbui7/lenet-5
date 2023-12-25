@@ -12,5 +12,5 @@ Done ?
 - FP16: constant + tiled fp16
 - Constant-mem:  
 - Restrict unroll: 
-- Stream: (constant + titled + restrict/unroll + stream) : done
+- Stream: (constant + titled + restrict/unroll + stream) : current
 - Tiled (constant + tiled ): done

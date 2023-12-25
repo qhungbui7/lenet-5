@@ -142,7 +142,7 @@ __host__ void GPUStreamInterface::conv_forward_gpu_prolog(const float* host_y,
                                                     const int K) {
   // std::cout << "*** constant mem + tiled + restrict/unroll + stream ***" << std::endl;
 
-  printf("(B=%d, M=%d, C=%d, H=%d, W=%d, K=%d)\n", B, M, C, H, W, K);
+  // printf("(B=%d, M=%d, C=%d, H=%d, W=%d, K=%d)\n", B, M, C, H, W, K);
 
   // Estimat output dimension
   const int H_out = H - K + 1;
