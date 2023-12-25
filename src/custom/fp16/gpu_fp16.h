@@ -1,5 +1,5 @@
-#ifndef SRC_LAYER_GPU_DIFF_LAYER_SIZE_H
-#define SRC_LAYER_GPU_DIFF_LAYER_SIZE_H
+#ifndef SRC_GPU_FP16_H
+#define SRC_GPU_FP16_H
 
 class GPUFP16Interface
 {
