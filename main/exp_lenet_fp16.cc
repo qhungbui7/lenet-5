@@ -25,14 +25,14 @@
 #include "src/network.h"
 #include "src/optimizer.h"
 #include "src/optimizer/sgd.h"
-#include "src/custom/tiled/tiled.h"
+#include "src/custom/fp16/fp16.h"
 
 
 int main() {
   // data
   FASHION_MNIST dataset("../data/fashion-mnist/");
   dataset.read();
-  std::cout << "Tiled Convolution LeNet-5 implementation" << std::endl;
+  std::cout << "FP16 Convolution LeNet-5 implementation" << std::endl;
   int n_train = dataset.train_data.cols();
   int dim_in = dataset.train_data.rows();
   std::cout << "mnist train number: " << n_train << std::endl;
@@ -50,14 +50,14 @@ int main() {
   // [(W−K+2P)/S]+1
 
   Network lenet5;
-  Layer* conv1 = new Tiled(1, 28, 28, 6, 5, 5, 1, 0, 0);
+  Layer* conv1 = new FP16Conv(1, 28, 28, 6, 5, 5, 1, 0, 0);
   Layer* relu1 = new ReLU;
   // (28 - 5 + 2 * 0) / 1 + 1 = 24
 
   Layer* pool2 = new MaxPooling(6, 24, 24, 2, 2, 1);
   // (24 - 2 + 2 * 0) / 1 + 1 = 23
 
-  Layer* conv3 = new Tiled(6, 23, 23, 16, 5, 5, 1, 0, 0);
+  Layer* conv3 = new FP16Conv(6, 23, 23, 16, 5, 5, 1, 0, 0);
   Layer* relu3 = new ReLU;
   // (23 - 5 + 2 * 0) / 1 + 1 = 19
 

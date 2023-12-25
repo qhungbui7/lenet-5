@@ -140,7 +140,7 @@ __host__ void GPUStreamInterface::conv_forward_gpu_prolog(const float* host_y,
                                                     const int H,
                                                     const int W,
                                                     const int K) {
-  std::cout << "*** constant mem + tiled + restrict/unroll + stream ***" << std::endl;
+  // std::cout << "*** constant mem + tiled + restrict/unroll + stream ***" << std::endl;
 
   printf("(B=%d, M=%d, C=%d, H=%d, W=%d, K=%d)\n", B, M, C, H, W, K);
 
@@ -270,8 +270,8 @@ __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
   dim3 grid(ceil((float)W_out / block.x),
             ceil((float)H_out / block.y),
             ceil((float)B / block.z));
-  printf("grid=(x=%d, y=%d, z=%d), block=(x=%d, y=%d, z=%d)\n",
-         grid.x, grid.y, grid.z, block.x, block.y, block.z);
+  // printf("grid=(x=%d, y=%d, z=%d), block=(x=%d, y=%d, z=%d)\n",
+  //        grid.x, grid.y, grid.z, block.x, block.y, block.z);
 
   // Determine shared memory size
   size_t smem_size =

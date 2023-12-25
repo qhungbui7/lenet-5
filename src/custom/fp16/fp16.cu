@@ -232,13 +232,13 @@ __host__ void GPUFP16Interface::conv_forward_gpu_prolog(const float* host_y,
                                                     const int H,
                                                     const int W,
                                                     const int K) {
-  std::cout << "*** constant mem + tiled gemm" << std::endl;
-  printf("*** (B=%d, M=%d, C=%d, H=%d, W=%d, K=%d)\n", B, M, C, H, W, K);
+  // std::cout << "*** constant mem + tiled gemm" << std::endl;
+  // printf("*** (B=%d, M=%d, C=%d, H=%d, W=%d, K=%d)\n", B, M, C, H, W, K);
 
   // Estimat output dimension
   const int H_out = H - K + 1;
   const int W_out = W - K + 1;
-  printf("*** (H_out=%d, W_out=%d)\n", H_out, W_out);
+  // printf("*** (H_out=%d, W_out=%d)\n", H_out, W_out);
 
   // Calculate needed bytes for original input
   const size_t bytes_y = (B * M * H_out * W_out) * sizeof(float);
@@ -339,13 +339,13 @@ __host__ void GPUFP16Interface::conv_forward_gpu(float* device_y,
   dim3 grid(ceil((float)H_out / TILE_WIDTH) * ceil((float)W_out / TILE_WIDTH),
             ceil((float)M / M_TILE_WIDTH),
             ceil((float)B / B_BATCH));
-  printf("*** grid=(x=%d, y=%d, z=%d), block=(x=%d, y=%d, z=%d)\n",
-         grid.x, grid.y, grid.z, block.x, block.y, block.z);
+  // printf("*** grid=(x=%d, y=%d, z=%d), block=(x=%d, y=%d, z=%d)\n",
+  //        grid.x, grid.y, grid.z, block.x, block.y, block.z);
 
   // Determine shared memory size
   size_t smem_size =
       B_BATCH * ((HW_TILE_WIDTH + M_TILE_WIDTH) * CKK_TILE_WIDTH + C_MAX * PADDED_TILE_WIDTH * PADDED_TILE_WIDTH) * sizeof(float);
-  std::cout << "*** estimated smem.size=" << smem_size / 1024 << "KiB" << std::endl;
+  // std::cout << "*** estimated smem.size=" << smem_size / 1024 << "KiB" << std::endl;
   smem_size = 0;  // DEBUG
 
 // Call the kernel
