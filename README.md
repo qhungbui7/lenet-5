@@ -10,7 +10,7 @@ Please read this:
 
 Done ?
 - FP16: constant + tiled fp16: current
-- Constant-mem:  
-- Restrict unroll: 
+- Constant-mem:  done
+- Restrict unroll: current
 - Stream: (constant + titled + restrict/unroll + stream) : done
 - Tiled (constant + tiled ): done

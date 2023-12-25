@@ -134,7 +134,7 @@ __host__ void GPURestrictUnrollInterface::conv_forward_gpu_prolog(const float* h
                                                     const int H,
                                                     const int W,
                                                     const int K) {
-  std::cout << "*** constant mem + tiled + restrict ***" << std::endl;
+  // std::cout << "*** constant mem + tiled + restrict ***" << std::endl;
 
   const int H_out = H - K + 1;
   const int W_out = W - K + 1;
@@ -142,7 +142,7 @@ __host__ void GPURestrictUnrollInterface::conv_forward_gpu_prolog(const float* h
   const size_t bytes_x = (B * C * H * W) * sizeof(float);
   const size_t bytes_k = (M * C * K * K) * sizeof(float);
 
-  printf("(B=%d, M=%d, C=%d, H=%d, W=%d, K=%d)\n", B, M, C, H, W, K);
+  // printf("(B=%d, M=%d, C=%d, H=%d, W=%d, K=%d)\n", B, M, C, H, W, K);
 
   // Allocate memory
   cudaErrChk(cudaMalloc(device_y_ptr, bytes_y));
@@ -174,8 +174,8 @@ __host__ void GPURestrictUnrollInterface::conv_forward_gpu(float* device_y,
   dim3 grid(ceil((float)W_out / TILE_WIDTH),
             ceil((float)H_out / TILE_WIDTH),
             ceil((float)B / B_batch));
-  printf("grid=(x=%d, y=%d, z=%d), block=(x=%d, y=%d, z=%d)\n",
-         grid.x, grid.y, grid.z, block.x, block.y, block.z);
+  // printf("grid=(x=%d, y=%d, z=%d), block=(x=%d, y=%d, z=%d)\n",
+  //        grid.x, grid.y, grid.z, block.x, block.y, block.z);
 
   // Determine shared memory size
   size_t smem_size =
