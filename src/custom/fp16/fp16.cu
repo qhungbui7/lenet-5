@@ -1,4 +1,3 @@
-#include <fp16.h>
 #include <cmath>
 #include <iostream>
 #include "gpu_fp16.h"

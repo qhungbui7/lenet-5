@@ -1,5 +1,5 @@
-#ifndef SRC_LAYER_DIFF_LAYER_H_
-#define SRC_LAYER_DIFF_LAYER_H_
+#ifndef SRC_FP16_H_
+#define SRC_FP16_H_
 
 #include <vector>
 #include <chrono>
