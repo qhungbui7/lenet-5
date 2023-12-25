@@ -7,3 +7,10 @@ Please read this:
 - https://stackoverflow.com/questions/1783405/how-do-i-check-out-a-remote-git-branch 
 - https://www.linkedin.com/pulse/git-best-practices-team-collaboration-chandan-thakur/
 - https://stackoverflow.com/questions/28163022/merge-two-remote-branches-in-a-git-repository 
+
+Done ?
+- FP16
+- Constant-mem
+- Restrict unroll
+- Stream
+- Tiled: current
