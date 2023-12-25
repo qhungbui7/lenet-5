@@ -8,7 +8,7 @@
 #include "gpu_stream.h"
 // #include "./hide/gpu-utils.h"
 
-class FP16Conv : public Layer
+class Stream : public Layer
 {
 private:
      const int dim_in;
@@ -34,12 +34,12 @@ private:
 
      std::vector<Matrix> data_cols;
 
-     GPUFP16Interface gpuInterface;
+     GPUStreamInterface gpuInterface;
 
      void init();
 
 public:
-     FP16Conv(int channel_in, int height_in, int width_in, int channel_out,
+     Stream(int channel_in, int height_in, int width_in, int channel_out,
                int height_kernel, int width_kernel, int stride = 1, int pad_w = 0,
                int pad_h = 0) : dim_in(channel_in * height_in * width_in),
                                 channel_in(channel_in), height_in(height_in), width_in(width_in),
