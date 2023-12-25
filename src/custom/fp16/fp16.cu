@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <cuda_fp16.h>
 #include "gpu_fp16.h"
 
 #define cudaErrChk(stmt) \
