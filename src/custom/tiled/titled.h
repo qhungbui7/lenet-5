@@ -5,7 +5,7 @@
 #include <chrono>
 #include "../../layer.h"
 #include <cuda_runtime_api.h>
-#include "gpu_fp16.h"
+#include "gpu_titled.h"
 // #include "./hide/gpu-utils.h"
 
 class Titled : public Layer

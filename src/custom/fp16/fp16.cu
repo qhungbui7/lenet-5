@@ -58,7 +58,9 @@ __global__ void conv_as_gemm(float* __restrict__ y,
   const int W_out = W - K + 1;
 
   // Alias for height/width axis
-  const int t_hw = threadIdx.x, b_hw = HW_TILE_WIDTH;
+  const int t_hw = threadIdx.x;
+  // const int b_hw = HW_TILE_WIDTH;
+  
   // Alias for output channels
   const int t_m = threadIdx.y, b_m = M_TILE_WIDTH;
   const int m = blockIdx.y * b_m + t_m;
@@ -101,7 +103,7 @@ __global__ void conv_as_gemm(float* __restrict__ y,
 #define t2d_xc(i_ckk, i_hw) \
   tile_xc[t_b][i_hw][i_ckk]
 
-  const int n_hw = H_out * W_out;
+  // const int n_hw = H_out * W_out;
 
   // Aggregate all threads, we will reassign their index
   // NOTE: HW_TILE_WIDTH * M_TILE_WIDTH = TILE_WIDTH * TILE_WIDTH
