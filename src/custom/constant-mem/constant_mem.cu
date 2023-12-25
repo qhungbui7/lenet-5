@@ -95,7 +95,7 @@ __host__ void GPUConstantMemInterface::conv_forward_gpu_prolog(const float* host
                                                     const int H,
                                                     const int W,
                                                     const int K) {
-  std::cout << "*** constant memory ***" << std::endl;
+  // std::cout << "*** constant memory ***" << std::endl;
 
   const int H_out = H - K + 1;
   const int W_out = W - K + 1;
