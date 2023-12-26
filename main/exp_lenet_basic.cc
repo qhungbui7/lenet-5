@@ -25,13 +25,14 @@
 #include "src/optimizer/sgd.h"
 #include "src/custom/basic_conv.h"
 #include "src/custom/fashion_mnist.h"
+#include <chrono>
 
 int main()
 {
   // data
   FASHION_MNIST dataset("../data/fashion-mnist/");
   dataset.read();
-  std::cout << "Newer LeNet-5 implementation" << std::endl;
+  std::cout << "Basic Convolution LeNet-5 implementation" << std::endl;
   int n_train = dataset.train_data.cols();
   int dim_in = dataset.train_data.rows();
   std::cout << "mnist train number: " << n_train << std::endl;
@@ -115,6 +116,8 @@ int main()
         std::cout << ith_batch << "-th grad: " << std::endl;
         lenet5.check_gradient(x_batch, target_batch, 10);
       }
+      
+      auto start_time = std::chrono::high_resolution_clock::now();
       lenet5.forward(x_batch);
       // lenet5.backward(x_batch, target_batch);
       //  display
@@ -122,6 +125,10 @@ int main()
       {
         std::cout << ith_batch << "-th batch, loss: " << lenet5.get_loss()
                   << std::endl;
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+        std::cout << "Time taken for 50 batches: " << duration.count() << " milliseconds" << std::endl;
+        return 0;
       }
       // optimize
       // lenet5.update(opt);

@@ -1,9 +1,11 @@
+
 /*
  * CNN demo for MNIST dataset
  * Author: Kai Han (kaihana@163.com)
  * Details in https://github.com/iamhankai/mini-dnn-cpp
  * Copyright 2018 Kai Han
- */
+*/
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <iostream>
@@ -19,17 +21,18 @@
 #include "src/loss.h"
 #include "src/loss/mse_loss.h"
 #include "src/loss/cross_entropy_loss.h"
-#include "src/mnist.h"
+#include "src/custom/fashion_mnist.h"
 #include "src/network.h"
 #include "src/optimizer.h"
 #include "src/optimizer/sgd.h"
+#include "src/custom/fp16/fp16.h"
 
 
 int main() {
   // data
-  MNIST dataset("../data/mnist/");
+  FASHION_MNIST dataset("../data/fashion-mnist/");
   dataset.read();
-  std::cout << "Newer LeNet-5 implementation" << std::endl;
+  std::cout << "FP16 LeNet-5 implementation" << std::endl;
   int n_train = dataset.train_data.cols();
   int dim_in = dataset.train_data.rows();
   std::cout << "mnist train number: " << n_train << std::endl;
@@ -47,20 +50,20 @@ int main() {
   // [(W−K+2P)/S]+1
 
   Network lenet5;
-  Layer* conv1 = new Conv(1, 28, 28, 6, 5, 5, 1, 0, 0);
+  Layer* conv1 = new FP16Conv(1, 28, 28, 6, 5, 5, 1, 0, 0);
   Layer* relu1 = new ReLU;
   // (28 - 5 + 2 * 0) / 1 + 1 = 24
 
   Layer* pool2 = new MaxPooling(6, 24, 24, 2, 2, 1);
   // (24 - 2 + 2 * 0) / 1 + 1 = 23
 
-  Layer* conv3 = new Conv(6, 23, 23, 16, 5, 5, 1, 0, 0);
+  Layer* conv3 = new FP16Conv(6, 23, 23, 16, 5, 5, 1, 0, 0);
   Layer* relu3 = new ReLU;
   // (23 - 5 + 2 * 0) / 1 + 1 = 19
 
   Layer* pool4 = new MaxPooling(16, 19, 19, 2, 2, 1);
   // (23 - 2 + 2 * 0) / 1 + 1 = 18
-  
+
   Layer* fc6 = new FullyConnected(pool4->output_dim(), 120);
   Layer* relu6 = new ReLU;
   // 19 * 19 * 16 = 5776
@@ -76,7 +79,7 @@ int main() {
   lenet5.add_layer(relu1);
 
   lenet5.add_layer(pool2);
-  
+
   lenet5.add_layer(conv3);
   lenet5.add_layer(relu3);
 
@@ -113,14 +116,14 @@ int main() {
         lenet5.check_gradient(x_batch, target_batch, 10);
       }
       lenet5.forward(x_batch);
-      lenet5.backward(x_batch, target_batch);
+      //lenet5.backward(x_batch, target_batch);
       // display
       if (ith_batch % 50 == 0) {
         std::cout << ith_batch << "-th batch, loss: " << lenet5.get_loss()
         << std::endl;
       }
       // optimize
-      lenet5.update(opt);
+      //lenet5.update(opt);
     }
     // test
     lenet5.forward(dataset.test_data);
@@ -131,4 +134,6 @@ int main() {
   }
   return 0;
 }
+
+
 
