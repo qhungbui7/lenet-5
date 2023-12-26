@@ -1,4 +1,9 @@
-#include "fp16_conv.h"
+#define HEIGHT 32
+#define WIDTH 32
+#define NUM_CHANNELS 3
+
+
+#include "fp16_conv_cu.h"
 #include <math.h>
 #include <iostream>
 
@@ -102,71 +107,86 @@ void FP16Conv::im2col(const Vector& image, Matrix& data_col) {
   }
 }
 
-void FP16Conv::elementwiseMul(Matrix* A, Matrix*B, Matrix* res, int hw_out, int channel_out){
+void FP16Conv::elementwiseMul(Matrix* A, Matrix*B, Matrix* res, int hw_out){
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     int row = idx / hw_out;
     int col = idx % hw_out;
     if (row < hw_out){
-        res[idx] = A[row][col] * B[row][col]; 
+        res[row][col] = A[row][col] * B[row][col]; 
     }
 
 }
 
 void FP16Conv::forward(const Matrix& bottom) {
-  int n_sample = bottom.cols();
-  top.resize(height_out * width_out * channel_out, n_sample); // resize
-  data_cols.resize(n_sample);
+  // int n_sample = bottom.cols();
+  // printf("%d\n", channel_out);
+  // top.resize(height_out * width_out * channel_out, n_sample); // resize
+  // data_cols.resize(n_sample);
 
-  float *g_A, *g_b, *res;
-  size_t mat_shape = Matrix<float, height_out * width_out, channel_out>; // sizeof(float) * height_out * width_out * channel_out;
-  Matrix *result = new Matrix<float, height_out * width_out, channel_out>; // check 
+  // // Matrix *device_matrix = new Matrix;  
+
+  // // float *g_A, *g_B, *res;
+
+  // printf("bottom %d %d", bottom.rows(), bottom.cols());
+  // printf("top %d %d", top.rows(), top.cols());
+
+  // printf("data_cols %d %d", data_cols.rows(), data_cols.cols());
+
+
+  // float *bottom_d = bottom.data();  
+  // float *top_d = top.data(); // height_out * width_out * channel_out, n_sample 
+
+
+
+  // Matrix *result = new Matrix; // check 
   
-  CHECK(cudaMalloc(&g_A, mat_shape));
-  CHECK(cudaMalloc(&g_B, mat_shape));
-  CHECK(cudaMalloc(&res, mat_shape));
+  // CHECK(cudaMalloc(&g_A, mat_shape));
+  // CHECK(cudaMalloc(&g_B, mat_shape));
+  // CHECK(cudaMalloc(&res, mat_shape));
 
-  dim3 blockSize(32, 32);
-  dim3 gridSize((height_out * width_out * channel_out) / blockSize.x + 1);
+  // dim3 blockSize(32, 32);
+  // dim3 gridSize((height_out * width_out * channel_out) / blockSize.x + 1);
 
-  for (int i = 0; i < n_sample; i++) { // optimize this loops
-    // im2col
-    Matrix data_col;
-    im2col(bottom.col(i), data_col);
-    data_cols[i] = data_col;
+  // for (int i = 0; i < n_sample; i++) { // optimize this loops
+  //   // im2col
+  //   Matrix data_col;
+  //   im2col(bottom.col(i), data_col);
+  //   data_cols[i] = data_col;
 
-    CHECK(cudaMemcpy(g_A, data_col, mat_shape, cudaMemcpyHostToDevice));
-    CHECK(cudaMemcpy(g_B weight, mat_shape, cudaMemcpyHostToDevice));
+  //   CHECK(cudaMemcpy(g_A, data_col, mat_shape, cudaMemcpyHostToDevice));
+  //   CHECK(cudaMemcpy(g_B, weight, mat_shape, cudaMemcpyHostToDevice));
 
-    // result = data_col * weight;  // result: (hw_out, channel_out)
-    elementwiseMul<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out, channel_out); 
+  //   // result = data_col * weight;  // result: (hw_out, channel_out)
+  //   elementwiseMul<<<gridSize, blockSize>>>(data_col, weight, result, height_out * width_out); 
 
-    CHECK(cudaMemcpy(result, res, mat_shape, cudaMemcpyDeviceToHost));
-
-
-    result.rowwise() += bias.transpose();
-    top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
+  //   CHECK(cudaMemcpy(result, res, mat_shape, cudaMemcpyDeviceToHost));
 
 
+  //   result.rowwise() += bias.transpose();
+  //   top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
 
 
-  }
 
 
-  free(result); 
+  // }
+
+
+  // free(result); 
   
-  CHECK(cudaFree(g_A));
-  CHECK(cudaFree(g_B));
-  CHECK(cudaFree(res));
+  // CHECK(cudaFree(g_A));
+  // CHECK(cudaFree(g_B));
+  // CHECK(cudaFree(res));
 
-  cudaDeviceSynchronize();
+  // cudaDeviceSynchronize();
 
-}
-
-void FP16Conv::forward(const Matrix& bottom) {
   int n_sample = bottom.cols();
   top.resize(height_out * width_out * channel_out, n_sample);
   data_cols.resize(n_sample);
+
+  // printf("bottom %d %d", bottom.rows(), bottom.cols());
+  // printf("top %d %d", top.rows(), top.cols());
+
   for (int i = 0; i < n_sample; i ++) {
     // im2col
     Matrix data_col;
@@ -177,7 +197,9 @@ void FP16Conv::forward(const Matrix& bottom) {
     result.rowwise() += bias.transpose();
     top.col(i) = Eigen::Map<Vector>(result.data(), result.size());
   }
+
 }
+
 
 // col2im, used for grad_bottom
 // data_col size: Matrix (hw_out, hw_kernel * channel_in)
