@@ -5,7 +5,7 @@
 #include <chrono>
 #include "../../layer.h"
 #include <cuda_runtime_api.h>
-#include "gpu_constant_mem.h"
+#include "./gpu_constant_mem.h"
 using namespace std;
 
 class ConstantMem : public Layer
