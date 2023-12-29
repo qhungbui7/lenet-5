@@ -59,6 +59,7 @@ __global__ void conv_forward_kernel(float* y,
   K - kernel height and width (K x K)
   */
 
+
   const int H_out = H - K + 1;
   const int W_out = W - K + 1;
 
@@ -75,12 +76,11 @@ __global__ void conv_forward_kernel(float* y,
         for (int c = 0; c < C; c++) {
           for (int p = 0; p < K; p++) {
             for (int q = 0; q < K; q++) {
-              sum += input_flatten(x, b, c, h + p, w + q, C, H, W) * \
-               kernel_flatten(kernel, m, c, p, q, C, K);
+              sum += x[(i3) * (C * H * W) + (i2) * (H * W) + (i1) * (W) + i0] *  kernel[(i3) * (C * K * K) + (i2) * (K * K) + (i1) * (K) + i0];
             }
           }
         }
-        output_flatten(y, b, m, h, w, H_out, W_out, M, sum);
+        y[(i3) * (M * H_out * W_out) + (i2) * (H_out * W_out) + (i1) * (W_out) + i0] = sum; 
       }
     }
   }
