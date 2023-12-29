@@ -21,18 +21,6 @@
 #define K_MAX   7
 __constant__ float kernel[M_MAX * C_MAX * K_MAX * K_MAX];
 
-__global__  void kernel_flatten(float *output, float* kernel, int i3, int i2, int i1, int i0, int C, int K){
-  output = &kernel[(i3) * (C * K * K) + (i2) * (K * K) + (i1) * (K) + i0];
-}
-
-__global__ void input_flatten(float *output, const float* x, int i3, int i2, int i1, int i0, int C, int H, int W){
-  output = &x[(i3) * (C * H * W) + (i2) * (H * W) + (i1) * (W) + i0];
-}
-
-__global__ void output_flatten(float* y, int i3, int i2, int i1, int i0, int H_out, int W_out, int M, int sum){
-  y[(i3) * (M * H_out * W_out) + (i2) * (H_out * W_out) + (i1) * (W_out) + i0] = sum; 
-}
-
 
 __global__ void conv_forward_kernel(float* y,
                                     const float* x,
