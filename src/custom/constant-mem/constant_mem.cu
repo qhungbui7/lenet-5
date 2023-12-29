@@ -73,7 +73,7 @@ __global__ void conv_forward_kernel(float* y,
         for (int c = 0; c < C; c++) {
           for (int p = 0; p < K; p++) {
             for (int q = 0; q < K; q++) {
-              sum += input_flatten(x, b, c, h + p, w + q, C, H, W) * kernel_flatten(k, m, c, p, q, C, K);
+              sum += input_flatten(x, b, c, h + p, w + q, C, H, W) * kernel_flatten(kernel, m, c, p, q, C, K);
             }
           }
         }
