@@ -68,7 +68,7 @@ __global__ void conv_forward_kernel(float* y,
             }
           }
         }
-        y[b* (M * H_out * W_out) + c * (H_out * W_out) + (h + p) * (W_out) + w] = sum; 
+        y[b* (M * H_out * W_out) + m * (H_out * W_out) + h * (W_out) + w] = sum; 
       }
     }
   }
