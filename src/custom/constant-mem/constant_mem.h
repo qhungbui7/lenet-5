@@ -6,7 +6,7 @@
 #include "../../layer.h"
 #include <cuda_runtime_api.h>
 #include "gpu_constant_mem.h"
-// #include "./hide/gpu-utils.h"
+using namespace std;
 
 class ConstantMem : public Layer
 {
@@ -32,11 +32,11 @@ private:
      Matrix grad_weight; // gradient w.r.t weight
      Vector grad_bias;   // gradient w.r.t bias
 
-     std::vector<Matrix> data_cols;
+     vector<Matrix> data_cols;
 
      GPUConstantMemInterface gpuInterface;
 
-     void init();
+     void initializeWeight();
 
 public:
      ConstantMem(int channel_in, int height_in, int width_in, int channel_out,
@@ -46,16 +46,16 @@ public:
                                 channel_out(channel_out), height_kernel(height_kernel),
                                 width_kernel(width_kernel), stride(stride), pad_w(pad_w), pad_h(pad_h)
      {
-          init();
+          initializeWeight();
      }
 
      void forward(const Matrix &bottom);
      void backward(const Matrix &bottom, const Matrix &grad_top);
      void update(Optimizer &opt);
      int output_dim() { return dim_out; }
-     std::vector<float> get_parameters() const;
-     std::vector<float> get_derivatives() const;
-     void set_parameters(const std::vector<float> &param);
+     vector<float> get_parameters() const;
+     vector<float> get_derivatives() const;
+     void set_parameters(const vector<float> &param);
 };
 
 #endif

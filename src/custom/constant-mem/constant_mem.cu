@@ -2,21 +2,34 @@
 #include <iostream>
 #include "gpu_constant_mem.h"
 
-#define cudaErrChk(stmt) \
-  { cudaAssert((stmt), __FILE__, __LINE__); }
+// #define cudaErrChk(stmt) \
+//   { cudaAssert((stmt), __FILE__, __LINE__); }
 
-inline void cudaAssert(cudaError_t error,
-                       const char* file,
-                       int line,
-                       bool abort = true) {
-  if (error != cudaSuccess) {
-    std::cerr << "CUDA error: " << cudaGetErrorString(error) << ' ' << file
-              << ':' << line << std::endl;
-    if (abort) {
-      exit(error);
-    }
-  }
+// inline void cudaAssert(cudaError_t error,
+//                        const char* file,
+//                        int line,
+//                        bool abort = true) {
+//   if (error != cudaSuccess) {
+//     std::cerr << "CUDA error: " << cudaGetErrorString(error) << ' ' << file
+//               << ':' << line << std::endl;
+//     if (abort) {
+//       exit(error);
+//     }
+//   }
+// }
+
+#define CHECK(call)\
+{\
+	const cudaError_t error = call;\
+	if (error != cudaSuccess)\
+	{\
+		fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);\
+		fprintf(stderr, "code: %d, reason: %s\n", error,\
+				cudaGetErrorString(error));\
+		exit(EXIT_FAILURE);\
+	}\
 }
+
 
 #define M_MAX   16
 #define C_MAX   4
@@ -104,13 +117,13 @@ __host__ void GPUConstantMemInterface::conv_forward_gpu_prolog(const float* host
   const size_t bytes_k = (M * C * K * K) * sizeof(float);
 
   // Allocate memory
-  cudaErrChk(cudaMalloc(device_y_ptr, bytes_y));
-  cudaErrChk(cudaMalloc(device_x_ptr, bytes_x));
+  CHECK(cudaMalloc(device_y_ptr, bytes_y));
+  CHECK(cudaMalloc(device_x_ptr, bytes_x));
 
   // Copy over the relevant data structures to the GPU
-  cudaErrChk(
+  CHECK(
       cudaMemcpy(*device_x_ptr, host_x, bytes_x, cudaMemcpyHostToDevice));
-  cudaErrChk(cudaMemcpyToSymbol(kernel, host_k, bytes_k));
+  CHECK(cudaMemcpyToSymbol(kernel, host_k, bytes_k));
 }
 
 __host__ void GPUConstantMemInterface::conv_forward_gpu(float* device_y,
@@ -131,7 +144,7 @@ __host__ void GPUConstantMemInterface::conv_forward_gpu(float* device_y,
   // Call the kernel
   conv_forward_kernel<<<dim_grid, dim_block>>>(device_y, device_x,
                                                B, M, C, H, W, K);
-  cudaErrChk(cudaDeviceSynchronize());
+  CHECK(cudaDeviceSynchronize());
 }
 
 __host__ void GPUConstantMemInterface::conv_forward_gpu_epilog(float* host_y,
@@ -149,11 +162,11 @@ __host__ void GPUConstantMemInterface::conv_forward_gpu_epilog(float* host_y,
   const size_t bytes_y = (B * M * H_out * W_out) * sizeof(float);
 
   // Copy the output back to host
-  cudaErrChk(cudaMemcpy(host_y, device_y, bytes_y, cudaMemcpyDeviceToHost));
+  CHECK(cudaMemcpy(host_y, device_y, bytes_y, cudaMemcpyDeviceToHost));
 
   // Free device memory
-  cudaErrChk(cudaFree(device_y));
-  cudaErrChk(cudaFree(device_x));
+  CHECK(cudaFree(device_y));
+  CHECK(cudaFree(device_x));
 }
 
 __host__ void GPUConstantMemInterface::get_device_properties() {
