@@ -30,7 +30,7 @@ void ConstantMem::forward(const Matrix &bottom)
   const int B = n_sample;
   const int M = channel_out;
   const int C = channel_in;
-  const int K = height_kernel; // Assuming width_kernel is also K
+  const int K = height_kernel;
 
   float *x_d;
   float *y_d;
