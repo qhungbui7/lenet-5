@@ -21,7 +21,7 @@
 #define K_MAX   7
 __constant__ float kernel[M_MAX * C_MAX * K_MAX * K_MAX];
 
-float kernel_flatten(const float* kernel, int i3, int i2, int i1, int i0, int C, int K){
+float kernel_flatten(float* kernel, int i3, int i2, int i1, int i0, int C, int K){
   return kernel[(i3) * (C * K * K) + (i2) * (K * K) + (i1) * (K) + i0];
 }
 
@@ -69,7 +69,9 @@ __global__ void conv_forward_kernel(float* y,
     // Naive GPU convolution kernel code
     for (int b = 0; b < B; b++) {
       for (int m = 0; m < M; m++) {
+        
         float sum = 0;
+
         for (int c = 0; c < C; c++) {
           for (int p = 0; p < K; p++) {
             for (int q = 0; q < K; q++) {
