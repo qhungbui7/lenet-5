@@ -36,21 +36,13 @@ void ConstantMem::forward(const Matrix &bottom)
   float *y_d;
   float *k_d;
 
-  // Launch marker kernel to aid with student function timing
-  // gpuUtils.insert_pre_barrier_kernel();
+  gpuInterface.cpy_data_to_gpu(y, x, k, &y_d, &x_d, &k_d, B, M, C, height_in, width_in, K);
 
-  // Data transfer CPU to GPU
-  gpuInterface.conv_forward_gpu_prolog(y, x, k, &y_d, &x_d, &k_d, B, M, C, height_in, width_in, K);
-
-  // Hand off to GPU for computation
-  gpuInterface.conv_forward_gpu(y_d, x_d, k_d, B, M, C, height_in, width_in, K);
+  gpuInterface.forward_gpu(y_d, x_d, k_d, B, M, C, height_in, width_in, K);
   cudaDeviceSynchronize();
 
-  // Data transfer GPU to CPU
-  gpuInterface.conv_forward_gpu_epilog(y, y_d, x_d, k_d, B, M, C, height_in, width_in, K);
+  gpuInterface.get_data_from_gpu(y, y_d, x_d, k_d, B, M, C, height_in, width_in, K);
 
-  // Launch barrier kernel to aid with timing with nsight-compute
-  // gpuUtils.insert_post_barrier_kernel();
 }
 
 
