@@ -16,7 +16,7 @@
 }
 
 
-#define M_MAX   16
+#define M_MAX   16 // can change easily
 #define C_MAX   4
 #define K_MAX   7
 __constant__ float kernel[M_MAX * C_MAX * K_MAX * K_MAX];
@@ -25,7 +25,7 @@ float kernel_flatten(float* kernel, int i3, int i2, int i1, int i0, int C, int K
   return kernel[(i3) * (C * K * K) + (i2) * (K * K) + (i1) * (K) + i0];
 }
 
-float input_flatten(float* x, int i3, int i2, int i1, int i0, int C, int H, int W){
+float input_flatten(const float* x, int i3, int i2, int i1, int i0, int C, int H, int W){
   return  x[(i3) * (C * H * W) + (i2) * (H * W) + (i1) * (W) + i0];
 }
 
