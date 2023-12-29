@@ -75,7 +75,7 @@ __global__ void conv_forward_kernel(float* y,
 
 }
 
-__host__ void GPUConstantMemInterface::cpy_data_to_gpu(const float* host_y,
+__host__ void GPUConstantMemInterface::conv_forward_gpu_prolog(const float* host_y,
                                                     const float* host_x,
                                                     const float* host_k,
                                                     float** device_y_ptr,
@@ -103,7 +103,7 @@ __host__ void GPUConstantMemInterface::cpy_data_to_gpu(const float* host_y,
   CHECK(cudaMemcpyToSymbol(kernel, host_k, bytes_k));
 }
 
-__host__ void GPUConstantMemInterface::forward_gpu(float* device_y,
+__host__ void GPUConstantMemInterface::conv_forward_gpu(float* device_y,
                                              const float* device_x,
                                              const float* device_k,
                                              const int B,
@@ -123,7 +123,7 @@ __host__ void GPUConstantMemInterface::forward_gpu(float* device_y,
   CHECK(cudaDeviceSynchronize());
 }
 
-__host__ void GPUConstantMemInterface::get_data_from_gpu(float* host_y,
+__host__ void GPUConstantMemInterface::conv_forward_gpu_epilog(float* host_y,
                                                     float* device_y,
                                                     float* device_x,
                                                     float* device_k,
@@ -143,7 +143,7 @@ __host__ void GPUConstantMemInterface::get_data_from_gpu(float* host_y,
   CHECK(cudaFree(device_x));
 }
 
-__host__ void GPUConstantMemInterface::device_info() {
+__host__ void GPUConstantMemInterface::get_device_properties() {
     cudaDeviceProp devProv;
     CHECK(cudaGetDeviceProperties(&devProv, 0));
     printf("**********GPU info**********\n");

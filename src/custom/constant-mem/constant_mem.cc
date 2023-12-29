@@ -3,7 +3,7 @@
 #include <iostream>
 using namespace std;
 
-void ConstantMem::initializeWeight()
+void ConstantMem::initialize()
 {
   height_out = (1 + (height_in - height_kernel + 2 * pad_h) / stride);
   width_out = (1 + (width_in - width_kernel + 2 * pad_w) / stride);
@@ -30,19 +30,27 @@ void ConstantMem::forward(const Matrix &bottom)
   const int B = n_sample;
   const int M = channel_out;
   const int C = channel_in;
-  const int K = height_kernel;
+  const int K = height_kernel; // Assuming width_kernel is also K
 
   float *x_d;
   float *y_d;
   float *k_d;
 
-  gpuInterface.cpy_data_to_gpu(y, x, k, &y_d, &x_d, &k_d, B, M, C, height_in, width_in, K);
+  // Launch marker kernel to aid with student function timing
+  // gpuUtils.insert_pre_barrier_kernel();
 
-  gpuInterface.forward_gpu(y_d, x_d, k_d, B, M, C, height_in, width_in, K);
+  // Data transfer CPU to GPU
+  gpuInterface.conv_forward_gpu_prolog(y, x, k, &y_d, &x_d, &k_d, B, M, C, height_in, width_in, K);
+
+  // Hand off to GPU for computation
+  gpuInterface.conv_forward_gpu(y_d, x_d, k_d, B, M, C, height_in, width_in, K);
   cudaDeviceSynchronize();
 
-  gpuInterface.get_data_from_gpu(y, y_d, x_d, k_d, B, M, C, height_in, width_in, K);
+  // Data transfer GPU to CPU
+  gpuInterface.conv_forward_gpu_epilog(y, y_d, x_d, k_d, B, M, C, height_in, width_in, K);
 
+  // Launch barrier kernel to aid with timing with nsight-compute
+  // gpuUtils.insert_post_barrier_kernel();
 }
 
 
