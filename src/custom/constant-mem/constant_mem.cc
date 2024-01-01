@@ -3,7 +3,7 @@
 #include <iostream>
 using namespace std;
 
-void ConstantMem::initialize()
+void ConstantMem::initializeWeight()
 {
   height_out = (1 + (height_in - height_kernel + 2 * pad_h) / stride);
   width_out = (1 + (width_in - width_kernel + 2 * pad_w) / stride);
