@@ -8,6 +8,7 @@
         "matrixfunctions": "cpp",
         "openglsupport": "cpp",
         "nnls": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "iostream": "cpp"
     }
 }

@@ -1,3 +1,6 @@
+%%writefile /content/lenet-5/main/exp_newer_lenet.cc
+
+
 /*
  * CNN demo for MNIST dataset
  * Author: Kai Han (kaihana@163.com)
@@ -23,76 +26,224 @@
 #include "src/network.h"
 #include "src/optimizer.h"
 #include "src/optimizer/sgd.h"
+#include "src/custom/fashion_mnist.h"
+#include "src/custom/constant-mem/constant_mem.h"
 
 
 int main() {
   // data
-  MNIST dataset("../data/mnist/");
+  FASHION_MNIST dataset("../data/fashion-mnist/");
   dataset.read();
+  std::cout << "Newer LeNet-5 implementation" << std::endl;
   int n_train = dataset.train_data.cols();
   int dim_in = dataset.train_data.rows();
   std::cout << "mnist train number: " << n_train << std::endl;
   std::cout << "mnist test number: " << dataset.test_labels.cols() << std::endl;
   // dnn
-  Network dnn;
-  Layer* conv1 = new Conv(1, 28, 28, 4, 5, 5, 2, 2, 2);
-  Layer* pool1 = new MaxPooling(4, 14, 14, 2, 2, 2);
-  Layer* conv2 = new Conv(4, 7, 7, 16, 5, 5, 1, 2, 2);
-  Layer* pool2 = new MaxPooling(16, 7, 7, 2, 2, 2);
-  Layer* fc3 = new FullyConnected(pool2->output_dim(), 32);
-  Layer* fc4 = new FullyConnected(32, 10);
+
+  // Conv(int channel_in, int height_in, int width_in, int channel_out,
+  //      int height_kernel, int width_kernel, int stride = 1, int pad_w = 0,
+  //      int pad_h = 0)
+
+
+  // MaxPooling(int channel_in, int height_in, int width_in,
+  //            int height_pool, int width_pool, int stride = 1) :
+
+  // [(W−K+2P)/S]+1
+
+  Network lenet5;
+  Layer* conv1 = new Conv(1, 28, 28, 6, 5, 5, 1, 0, 0);
   Layer* relu1 = new ReLU;
-  Layer* relu2 = new ReLU;
+  // (28 - 5 + 2 * 0) / 1 + 1 = 24
+
+  Layer* pool2 = new MaxPooling(6, 24, 24, 2, 2, 1);
+  // (24 - 2 + 2 * 0) / 1 + 1 = 23
+
+  Layer* conv3 = new Conv(6, 23, 23, 16, 5, 5, 1, 0, 0);
   Layer* relu3 = new ReLU;
-  Layer* softmax = new Softmax;
-  dnn.add_layer(conv1);
-  dnn.add_layer(relu1);
-  dnn.add_layer(pool1);
-  dnn.add_layer(conv2);
-  dnn.add_layer(relu2);
-  dnn.add_layer(pool2);
-  dnn.add_layer(fc3);
-  dnn.add_layer(relu3);
-  dnn.add_layer(fc4);
-  dnn.add_layer(softmax);
+  // (23 - 5 + 2 * 0) / 1 + 1 = 19
+
+  Layer* pool4 = new MaxPooling(16, 19, 19, 2, 2, 1);
+  // (23 - 2 + 2 * 0) / 1 + 1 = 18
+  
+  Layer* fc6 = new FullyConnected(pool4->output_dim(), 120);
+  Layer* relu6 = new ReLU;
+  // 19 * 19 * 16 = 5776
+
+
+  Layer* fc7 = new FullyConnected(120, 84);
+  Layer* relu7 = new ReLU;
+
+  Layer* fc8 = new FullyConnected(84, 10);
+  Layer* softmax8 = new Softmax;
+
+  lenet5.add_layer(conv1);
+  lenet5.add_layer(relu1);
+
+  lenet5.add_layer(pool2);
+  
+  lenet5.add_layer(conv3);
+  lenet5.add_layer(relu3);
+
+  lenet5.add_layer(pool4);
+
+  lenet5.add_layer(fc6);
+  lenet5.add_layer(relu6);
+
+  lenet5.add_layer(fc7);
+  lenet5.add_layer(relu7);
+
+  lenet5.add_layer(fc8);
+  lenet5.add_layer(softmax8);
+
   // loss
   Loss* loss = new CrossEntropy;
-  dnn.add_loss(loss);
+  lenet5.add_loss(loss);
   // train & test
   SGD opt(0.001, 5e-4, 0.9, true);
   // SGD opt(0.001);
   const int n_epoch = 5;
   const int batch_size = 128;
   for (int epoch = 0; epoch < n_epoch; epoch ++) {
+    // break; 
     shuffle_data(dataset.train_data, dataset.train_labels);
-    for (int start_idx = 0; start_idx < n_train; start_idx += batch_size) {
-      int ith_batch = start_idx / batch_size;
-      Matrix x_batch = dataset.train_data.block(0, start_idx, dim_in,
-                                    std::min(batch_size, n_train - start_idx));
-      Matrix label_batch = dataset.train_labels.block(0, start_idx, 1,
-                                    std::min(batch_size, n_train - start_idx));
-      Matrix target_batch = one_hot_encode(label_batch, 10);
-      if (false && ith_batch % 10 == 1) {
-        std::cout << ith_batch << "-th grad: " << std::endl;
-        dnn.check_gradient(x_batch, target_batch, 10);
-      }
-      dnn.forward(x_batch);
-      dnn.backward(x_batch, target_batch);
-      // display
-      if (ith_batch % 50 == 0) {
-        std::cout << ith_batch << "-th batch, loss: " << dnn.get_loss()
-        << std::endl;
-      }
-      // optimize
-      dnn.update(opt);
+  //   for (int start_idx = 0; start_idx < n_train; start_idx += batch_size) {
+  //     int ith_batch = start_idx / batch_size;
+  //     Matrix x_batch = dataset.train_data.block(0, start_idx, dim_in,
+  //                                   std::min(batch_size, n_train - start_idx));
+  //     Matrix label_batch = dataset.train_labels.block(0, start_idx, 1,
+  //                                   std::min(batch_size, n_train - start_idx));
+  //     Matrix target_batch = one_hot_encode(label_batch, 10);
+  //     if (false && ith_batch % 10 == 1) {
+  //       std::cout << ith_batch << "-th grad: " << std::endl;
+  //       lenet5.check_gradient(x_batch, target_batch, 10);
+  //     }
+  //     lenet5.forward(x_batch);
+  //     lenet5.backward(x_batch, target_batch);
+  //     // display
+  //     if (ith_batch % 50 == 0) {
+  //       std::cout << ith_batch << "-th batch, loss: " << lenet5.get_loss()
+  //       << std::endl;
+  //     }
+  //     // optimize
+  //     lenet5.update(opt);
+  //   }
+
+  //   // test
+  //   lenet5.forward(dataset.test_data);
+  //   float acc = compute_accuracy(lenet5.output(), dataset.test_labels);
+  //   std::cout << std::endl;
+  //   std::cout << epoch + 1 << "-th epoch, test acc: " << acc << std::endl;
+  //   std::cout << std::endl;
+  //   break;
+  }
+
+  
+  std::vector<std::vector<float>> weights = lenet5.get_parameters(); 
+
+
+
+  std::cout << "GPU models";
+
+
+  Network c_lenet5;
+  Layer* c_conv1 = new ConstantMem(1, 28, 28, 6, 5, 5, 1, 0, 0);
+  Layer* c_relu1 = new ReLU;
+  // (28 - 5 + 2 * 0) / 1 + 1 = 24
+
+  Layer* c_pool2 = new MaxPooling(6, 24, 24, 2, 2, 1);
+  // (24 - 2 + 2 * 0) / 1 + 1 = 23
+
+  Layer* c_conv3 = new ConstantMem(6, 23, 23, 16, 5, 5, 1, 0, 0);
+  Layer* c_relu3 = new ReLU;
+  // (23 - 5 + 2 * 0) / 1 + 1 = 19
+
+  Layer* c_pool4 = new MaxPooling(16, 19, 19, 2, 2, 1);
+  // (23 - 2 + 2 * 0) / 1 + 1 = 18
+
+  Layer* c_fc6 = new FullyConnected(pool4->output_dim(), 120);
+  Layer* c_relu6 = new ReLU;
+  // 19 * 19 * 16 = 5776
+
+
+  Layer* c_fc7 = new FullyConnected(120, 84);
+  Layer* c_relu7 = new ReLU;
+
+  Layer* c_fc8 = new FullyConnected(84, 10);
+  Layer* c_softmax8 = new Softmax;
+
+  c_lenet5.add_layer(conv1);
+  c_lenet5.add_layer(relu1);
+
+  c_lenet5.add_layer(pool2);
+
+  c_lenet5.add_layer(conv3);
+  c_lenet5.add_layer(relu3);
+
+  c_lenet5.add_layer(pool4);
+
+  c_lenet5.add_layer(fc6);
+  c_lenet5.add_layer(relu6);
+
+  c_lenet5.add_layer(fc7);
+  c_lenet5.add_layer(relu7);
+
+  c_lenet5.add_layer(fc8);
+  c_lenet5.add_layer(softmax8);
+
+  c_lenet5.set_parameters(weights); 
+
+  // loss
+  Loss* c_loss = new CrossEntropy;
+  c_lenet5.add_loss(c_loss);
+  // train & test
+  SGD c_opt(0.001, 5e-4, 0.9, true);
+  // SGD opt(0.001);
+  const int c_n_epoch = 5;
+  const int c_batch_size = 128;
+  for (int epoch = 0; epoch < c_n_epoch; epoch++) {
+    shuffle_data(dataset.train_data, dataset.train_labels);
+    // for (int start_idx = 0; start_idx < n_train; start_idx += c_batch_size) {
+    //   int ith_batch = start_idx / batch_size;
+    //   Matrix x_batch = dataset.train_data.block(0, start_idx, dim_in,
+    //                                 std::min(batch_size, n_train - start_idx));
+    //   Matrix label_batch = dataset.train_labels.block(0, start_idx, 1,
+    //                                 std::min(batch_size, n_train - start_idx));
+    //   Matrix target_batch = one_hot_encode(label_batch, 10);
+    //   if (false && ith_batch % 10 == 1) {
+    //     std::cout << ith_batch << "-th grad: " << std::endl;
+    //     c_lenet5.check_gradient(x_batch, target_batch, 10);
+    //   }
+    //   auto start_time = std::chrono::high_resolution_clock::now();
+    //   c_lenet5.forward(x_batch);
+    //   // lenet5.backward(x_batch, target_batch);
+    //   //  display
+    //   if (ith_batch % 50 == 0)
+    //   {
+    //     std::cout << ith_batch << "-th batch, loss: " << lenet5.get_loss()
+    //               << std::endl;
+    //     auto end_time = std::chrono::high_resolution_clock::now();
+    //     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    //     std::cout << "Time taken for 50 batches: " << duration.count() << " milliseconds" << std::endl;
+    //     return 0;
+    //   }
+    //   // optimize
+    //   //lenet5.update(opt);
     }
     // test
-    dnn.forward(dataset.test_data);
-    float acc = compute_accuracy(dnn.output(), dataset.test_labels);
+    c_lenet5.forward(dataset.test_data);
+    float c_acc = compute_accuracy(c_lenet5.output(), dataset.test_labels);
     std::cout << std::endl;
-    std::cout << epoch + 1 << "-th epoch, test acc: " << acc << std::endl;
+    std::cout << epoch + 1 << "-th epoch, test acc: " << c_acc << std::endl;
     std::cout << std::endl;
+
+
+
+    
   }
   return 0;
 }
+
+
+
 
