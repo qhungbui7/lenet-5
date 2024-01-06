@@ -1,5 +1,5 @@
-#ifndef SRC_GPU_TILED_H
-#define SRC_GPU_TILED_H
+#ifndef SRC_GPU_TILED_H_
+#define SRC_GPU_TILED_H_
 
 class GPUTiledInterface
 {
