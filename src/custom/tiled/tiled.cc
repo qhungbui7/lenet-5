@@ -2,7 +2,7 @@
 #include <math.h>
 #include <iostream>
 
-void Tiled::init()
+void TiledConvolution::init()
 {
   height_out = (1 + (height_in - height_kernel + 2 * pad_h) / stride);
   width_out = (1 + (width_in - width_kernel + 2 * pad_w) / stride);
@@ -19,7 +19,7 @@ void Tiled::init()
   //  gpuInterface.get_device_properties();
 }
 
-void Tiled::forward(const Matrix &bottom)
+void TiledConvolution::forward(const Matrix &bottom)
 {
   int n_sample = bottom.cols();
   top.resize(height_out * width_out * channel_out, n_sample);
@@ -54,15 +54,15 @@ void Tiled::forward(const Matrix &bottom)
   // gpuUtils.insert_post_barrier_kernel();
 }
 
-void Tiled::backward(const Matrix &bottom, const Matrix &grad_top)
+void TiledConvolution::backward(const Matrix &bottom, const Matrix &grad_top)
 {
 }
 
-void Tiled::update(Optimizer &opt)
+void TiledConvolution::update(Optimizer &opt)
 {
 }
 
-std::vector<float> Tiled::get_parameters() const
+std::vector<float> TiledConvolution::get_parameters() const
 {
   std::vector<float> res(weight.size() + bias.size());
   // Copy the data of weights and bias to a long vector
