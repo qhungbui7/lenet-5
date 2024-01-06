@@ -4,9 +4,6 @@
 
 using namespace std;
 
-
-using namespace std;
-
 #include "gpu_restrict_unroll.h"
 
 #define CHECK(call)\

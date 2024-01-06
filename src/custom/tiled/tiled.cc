@@ -1,6 +1,8 @@
 #include "tiled.h"
 #include <math.h>
 #include <iostream>
+using namespace std;
+
 
 void Tiled::init()
 {

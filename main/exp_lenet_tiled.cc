@@ -21,6 +21,7 @@
 #include "src/custom/fashion_mnist.h"
 #include "src/custom/tiled/tiled.h"
 
+using namespace std;
 
 int main() {
   // data
