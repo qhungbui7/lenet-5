@@ -130,12 +130,12 @@ int main() {
   //   }
 
   //   // test
-  //   lenet5.forward(dataset.test_data);
-  //   float acc = compute_accuracy(lenet5.output(), dataset.test_labels);
-  //   std::cout << std::endl;
-  //   std::cout << epoch + 1 << "-th epoch, test acc: " << acc << std::endl;
-  //   std::cout << std::endl;
-  //   break;
+    lenet5.forward(dataset.test_data);
+    float acc = compute_accuracy(lenet5.output(), dataset.test_labels);
+    std::cout << std::endl;
+    std::cout << epoch + 1 << "-th epoch, test acc: " << acc << std::endl;
+    std::cout << std::endl;
+    break;
   }
 
   
@@ -143,7 +143,7 @@ int main() {
 
 
 
-  std::cout << "GPU models";
+  std::cout << "GPU models\n";
 
 
   Network c_lenet5;
@@ -229,14 +229,14 @@ int main() {
     //   }
     //   // optimize
     //   //lenet5.update(opt);
-    }
+    //}
     // test
     c_lenet5.forward(dataset.test_data);
     float c_acc = compute_accuracy(c_lenet5.output(), dataset.test_labels);
     std::cout << std::endl;
     std::cout << epoch + 1 << "-th epoch, test acc: " << c_acc << std::endl;
     std::cout << std::endl;
-
+    break;
 
 
     

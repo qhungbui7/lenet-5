@@ -2,6 +2,8 @@
 #include <math.h>
 #include <iostream>
 
+using namespace std;
+
 void Stream::init()
 {
   height_out = (1 + (height_in - height_kernel + 2 * pad_h) / stride);
@@ -14,8 +16,8 @@ void Stream::init()
   grad_bias.resize(channel_out);
   set_normal_random(weight.data(), weight.size(), 0, 0.01);
   set_normal_random(bias.data(), bias.size(), 0, 0.01);
-  // std::cout << weight.colwise().sum() << std::endl;
-  // std::cout << weight.colwise().sum() + bias.transpose() << std::endl;
+  // cout << weight.colwise().sum() << endl;
+  // cout << weight.colwise().sum() + bias.transpose() << endl;
   //  gpuInterface.get_device_properties();
 }
 
@@ -62,29 +64,29 @@ void Stream::update(Optimizer &opt)
 {
 }
 
-std::vector<float> Stream::get_parameters() const
+vector<float> Stream::get_parameters() const
 {
-  std::vector<float> res(weight.size() + bias.size());
+  vector<float> res(weight.size() + bias.size());
   // Copy the data of weights and bias to a long vector
-  std::copy(weight.data(), weight.data() + weight.size(), res.begin());
-  std::copy(bias.data(), bias.data() + bias.size(), res.begin() + weight.size());
+  copy(weight.data(), weight.data() + weight.size(), res.begin());
+  copy(bias.data(), bias.data() + bias.size(), res.begin() + weight.size());
   return res;
 }
 
-void Stream::set_parameters(const std::vector<float> &param)
+void Stream::set_parameters(const vector<float> &param)
 {
   if (static_cast<int>(param.size()) != weight.size() + bias.size())
-    throw std::invalid_argument("Parameter size does not match");
-  std::copy(param.begin(), param.begin() + weight.size(), weight.data());
-  std::copy(param.begin() + weight.size(), param.end(), bias.data());
+    throw invalid_argument("Parameter size does not match");
+  copy(param.begin(), param.begin() + weight.size(), weight.data());
+  copy(param.begin() + weight.size(), param.end(), bias.data());
 }
 
-std::vector<float> Stream::get_derivatives() const
+vector<float> Stream::get_derivatives() const
 {
-  std::vector<float> res(grad_weight.size() + grad_bias.size());
+  vector<float> res(grad_weight.size() + grad_bias.size());
   // Copy the data of weights and bias to a long vector
-  std::copy(grad_weight.data(), grad_weight.data() + grad_weight.size(), res.begin());
-  std::copy(grad_bias.data(), grad_bias.data() + grad_bias.size(),
+  copy(grad_weight.data(), grad_weight.data() + grad_weight.size(), res.begin());
+  copy(grad_bias.data(), grad_bias.data() + grad_bias.size(),
             res.begin() + grad_weight.size());
   return res;
 }

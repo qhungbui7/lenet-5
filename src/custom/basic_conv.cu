@@ -1,6 +1,9 @@
 #include <cmath>
 #include <iostream>
 #include "gpu_new_forward.h"
+
+using namespace std;
+
 #define TILE_WIDTH 20
 __constant__ float Mask[6000];
 
@@ -89,7 +92,7 @@ __host__ void GPUInterface::conv_forward_gpu_prolog(const float *host_y, const f
     // cudaError_t error = cudaGetLastError();
     // if(error != cudaSuccess)
     // {
-    //     std::cout<<"CUDA error: "<<cudaGetErrorString(error)<<std::endl;
+    //     cout<<"CUDA error: "<<cudaGetErrorString(error)<<endl;
     //     exit(-1);
     // }
 
@@ -133,14 +136,14 @@ __host__ void GPUInterface::get_device_properties()
         cudaDeviceProp deviceProp;
         cudaGetDeviceProperties(&deviceProp, dev);
 
-        std::cout<<"Device "<<dev<<" name: "<<deviceProp.name<<std::endl;
-        std::cout<<"Computational capabilities: "<<deviceProp.major<<"."<<deviceProp.minor<<std::endl;
-        std::cout<<"Max Global memory size: "<<deviceProp.totalGlobalMem<<std::endl;
-        std::cout<<"Max Constant memory size: "<<deviceProp.totalConstMem<<std::endl;
-        std::cout<<"Max Shared memory size per block: "<<deviceProp.sharedMemPerBlock<<std::endl;
-        std::cout<<"Max threads per block: "<<deviceProp.maxThreadsPerBlock<<std::endl;
-        std::cout<<"Max block dimensions: "<<deviceProp.maxThreadsDim[0]<<" x, "<<deviceProp.maxThreadsDim[1]<<" y, "<<deviceProp.maxThreadsDim[2]<<" z"<<std::endl;
-        std::cout<<"Max grid dimensions: "<<deviceProp.maxGridSize[0]<<" x, "<<deviceProp.maxGridSize[1]<<" y, "<<deviceProp.maxGridSize[2]<<" z"<<std::endl;
-        std::cout<<"Warp Size: "<<deviceProp.warpSize<<std::endl;
+        cout<<"Device "<<dev<<" name: "<<deviceProp.name<<endl;
+        cout<<"Computational capabilities: "<<deviceProp.major<<"."<<deviceProp.minor<<endl;
+        cout<<"Max Global memory size: "<<deviceProp.totalGlobalMem<<endl;
+        cout<<"Max Constant memory size: "<<deviceProp.totalConstMem<<endl;
+        cout<<"Max Shared memory size per block: "<<deviceProp.sharedMemPerBlock<<endl;
+        cout<<"Max threads per block: "<<deviceProp.maxThreadsPerBlock<<endl;
+        cout<<"Max block dimensions: "<<deviceProp.maxThreadsDim[0]<<" x, "<<deviceProp.maxThreadsDim[1]<<" y, "<<deviceProp.maxThreadsDim[2]<<" z"<<endl;
+        cout<<"Max grid dimensions: "<<deviceProp.maxGridSize[0]<<" x, "<<deviceProp.maxGridSize[1]<<" y, "<<deviceProp.maxGridSize[2]<<" z"<<endl;
+        cout<<"Warp Size: "<<deviceProp.warpSize<<endl;
     }
 }

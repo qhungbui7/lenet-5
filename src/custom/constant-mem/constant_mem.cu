@@ -15,6 +15,19 @@
 	}\
 }
 
+__host__ void GPUConstantMemInterface::get_device_properties() {
+    cudaDeviceProp devProv;
+    CHECK(cudaGetDeviceProperties(&devProv, 0));
+    printf("**********GPU info**********\n");
+    printf("Name: %s\n", devProv.name);
+    printf("Compute capability: %d.%d\n", devProv.major, devProv.minor);
+    printf("Num SMs: %d\n", devProv.multiProcessorCount);
+    printf("Max num threads per SM: %d\n", devProv.maxThreadsPerMultiProcessor); 
+    printf("Max num warps per SM: %d\n", devProv.maxThreadsPerMultiProcessor / devProv.warpSize);
+    printf("GMEM: %lu bytes\n", devProv.totalGlobalMem);
+    printf("****************************\n\n");
+}
+
 
 #define M_MAX   16 // can change easily
 #define C_MAX   4
@@ -143,15 +156,3 @@ __host__ void GPUConstantMemInterface::conv_forward_gpu_epilog(float* host_y,
   CHECK(cudaFree(device_x));
 }
 
-__host__ void GPUConstantMemInterface::get_device_properties() {
-    cudaDeviceProp devProv;
-    CHECK(cudaGetDeviceProperties(&devProv, 0));
-    printf("**********GPU info**********\n");
-    printf("Name: %s\n", devProv.name);
-    printf("Compute capability: %d.%d\n", devProv.major, devProv.minor);
-    printf("Num SMs: %d\n", devProv.multiProcessorCount);
-    printf("Max num threads per SM: %d\n", devProv.maxThreadsPerMultiProcessor); 
-    printf("Max num warps per SM: %d\n", devProv.maxThreadsPerMultiProcessor / devProv.warpSize);
-    printf("GMEM: %lu bytes\n", devProv.totalGlobalMem);
-    printf("****************************\n\n");
-}

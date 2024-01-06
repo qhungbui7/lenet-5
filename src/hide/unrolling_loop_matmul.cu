@@ -1,2 +1,0 @@
-// https://stackoverflow.com/questions/22278631/what-does-pragma-unroll-do-exactly-does-it-affect-the-number-of-threads
-// https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#pragma-unroll

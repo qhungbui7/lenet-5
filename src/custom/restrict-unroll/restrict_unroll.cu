@@ -1,5 +1,8 @@
 #include <cmath>
 #include <iostream>
+
+using namespace std;
+
 #include "gpu_restrict_unroll.h"
 
 #define cudaErrChk(stmt) \
@@ -10,8 +13,8 @@ inline void cudaAssert(cudaError_t error,
                        int line,
                        bool abort = true) {
   if (error != cudaSuccess) {
-    std::cerr << "CUDA error: "
-              << cudaGetErrorString(error) << ' ' << file << ':' << line << std::endl;
+    cerr << "CUDA error: "
+              << cudaGetErrorString(error) << ' ' << file << ':' << line << endl;
     if (abort) {
       exit(error);
     }
@@ -134,7 +137,7 @@ __host__ void GPURestrictUnrollInterface::conv_forward_gpu_prolog(const float* h
                                                     const int H,
                                                     const int W,
                                                     const int K) {
-  // std::cout << "*** constant mem + tiled + restrict ***" << std::endl;
+  // cout << "*** constant mem + tiled + restrict ***" << endl;
 
   const int H_out = H - K + 1;
   const int W_out = W - K + 1;
@@ -216,25 +219,25 @@ __host__ void GPURestrictUnrollInterface::get_device_properties() {
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, dev);
 
-    std::cout << "Device " << dev << " name: " << deviceProp.name << std::endl;
-    std::cout << "Computational capabilities: "
-              << deviceProp.major << "." << deviceProp.minor << std::endl;
-    std::cout << "Max Global memory size: " << deviceProp.totalGlobalMem
-              << std::endl;
-    std::cout << "Max Constant memory size: " << deviceProp.totalConstMem
-              << std::endl;
-    std::cout << "Max Shared memory size per block: " << deviceProp.sharedMemPerBlock
-              << std::endl;
-    std::cout << "Max threads per block: " << deviceProp.maxThreadsPerBlock
-              << std::endl;
-    std::cout << "Max block dimensions: "
+    cout << "Device " << dev << " name: " << deviceProp.name << endl;
+    cout << "Computational capabilities: "
+              << deviceProp.major << "." << deviceProp.minor << endl;
+    cout << "Max Global memory size: " << deviceProp.totalGlobalMem
+              << endl;
+    cout << "Max Constant memory size: " << deviceProp.totalConstMem
+              << endl;
+    cout << "Max Shared memory size per block: " << deviceProp.sharedMemPerBlock
+              << endl;
+    cout << "Max threads per block: " << deviceProp.maxThreadsPerBlock
+              << endl;
+    cout << "Max block dimensions: "
               << deviceProp.maxThreadsDim[0] << " x, "
               << deviceProp.maxThreadsDim[1] << " y, "
-              << deviceProp.maxThreadsDim[2] << " z" << std::endl;
-    std::cout << "Max grid dimensions: "
+              << deviceProp.maxThreadsDim[2] << " z" << endl;
+    cout << "Max grid dimensions: "
               << deviceProp.maxGridSize[0] << " x, "
               << deviceProp.maxGridSize[1] << " y, "
-              << deviceProp.maxGridSize[2] << " z" << std::endl;
-    std::cout << "Warp Size: " << deviceProp.warpSize << std::endl;
+              << deviceProp.maxGridSize[2] << " z" << endl;
+    cout << "Warp Size: " << deviceProp.warpSize << endl;
   }
 }

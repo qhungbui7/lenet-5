@@ -9,8 +9,8 @@ int ReverseInt(int i) {
   return ((int)ch1 << 24) + ((int)ch2 << 16) + ((int)ch3 << 8) + ch4;
 }
 
-void FASHION_MNIST::read_mnist_data(std::string filename, Matrix& data) {
-  std::ifstream file(filename, std::ios::binary);
+void FASHION_MNIST::read_mnist_data(string filename, Matrix& data) {
+  ifstream file(filename, ios::binary);
   if (file.is_open()) {
     int magic_number = 0;
     int number_of_images = 0;
@@ -39,8 +39,8 @@ void FASHION_MNIST::read_mnist_data(std::string filename, Matrix& data) {
   }
 }
 
-void FASHION_MNIST::read_mnist_label(std::string filename, Matrix& labels) {
-  std::ifstream file(filename, std::ios::binary);
+void FASHION_MNIST::read_mnist_label(string filename, Matrix& labels) {
+  ifstream file(filename, ios::binary);
   if (file.is_open()) {
     int magic_number = 0;
     int number_of_images = 0;

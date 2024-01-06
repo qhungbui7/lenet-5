@@ -32,7 +32,7 @@ private:
      Matrix grad_weight; // gradient w.r.t weight
      Vector grad_bias;   // gradient w.r.t bias
 
-     std::vector<Matrix> data_cols;
+     vector<Matrix> data_cols;
 
      GPUReductionTreeInterface gpuInterface;
 
@@ -53,8 +53,8 @@ public:
      void backward(const Matrix &bottom, const Matrix &grad_top);
      void update(Optimizer &opt);
      int output_dim() { return dim_out; }
-     std::vector<float> get_parameters() const;
-     std::vector<float> get_derivatives() const;
+     vector<float> get_parameters() const;
+     vector<float> get_derivatives() const;
      void set_parameters(const std::vector<float> &param);
 };
 

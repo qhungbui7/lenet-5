@@ -1,6 +1,7 @@
 #include "diff_layer_conv.h"
 #include <math.h>
 #include <iostream>
+using namespace std;
 
 void DiffLayerSizeConv::init()
 {
@@ -14,9 +15,6 @@ void DiffLayerSizeConv::init()
   grad_bias.resize(channel_out);
   set_normal_random(weight.data(), weight.size(), 0, 0.01);
   set_normal_random(bias.data(), bias.size(), 0, 0.01);
-  // std::cout << weight.colwise().sum() << std::endl;
-  // std::cout << weight.colwise().sum() + bias.transpose() << std::endl;
-  //  gpuInterface.get_device_properties();
 }
 
 void DiffLayerSizeConv::forward(const Matrix &bottom)
@@ -31,27 +29,44 @@ void DiffLayerSizeConv::forward(const Matrix &bottom)
   const int B = n_sample;
   const int M = channel_out;
   const int C = channel_in;
-  const int K = height_kernel; // Assuming width_kernel is also K
+  const int K = height_kernel;
 
   float *x_d;
   float *y_d;
   float *k_d;
 
-  // Launch marker kernel to aid with student function timing
-  // gpuUtils.insert_pre_barrier_kernel();
-
-  // Data transfer CPU to GPU
   gpuInterface.conv_forward_gpu_prolog(y, x, k, &y_d, &x_d, &k_d, B, M, C, height_in, width_in, K);
-
-  // Hand off to GPU for computation
   gpuInterface.conv_forward_gpu(y_d, x_d, k_d, B, M, C, height_in, width_in, K);
   cudaDeviceSynchronize();
-
-  // Data transfer GPU to CPU
   gpuInterface.conv_forward_gpu_epilog(y, y_d, x_d, k_d, B, M, C, height_in, width_in, K);
 
-  // Launch barrier kernel to aid with timing with nsight-compute
-  // gpuUtils.insert_post_barrier_kernel();
+}
+
+
+
+vector<float> DiffLayerSizeConv::get_parameters() const
+{
+  vector<float> res(weight.size() + bias.size());
+  copy(weight.data(), weight.data() + weight.size(), res.begin());
+  copy(bias.data(), bias.data() + bias.size(), res.begin() + weight.size());
+  return res;
+}
+
+void DiffLayerSizeConv::set_parameters(const vector<float> &param)
+{
+  if (static_cast<int>(param.size()) != weight.size() + bias.size())
+    throw invalid_argument("Parameter size does not match");
+  copy(param.begin(), param.begin() + weight.size(), weight.data());
+  copy(param.begin() + weight.size(), param.end(), bias.data());
+}
+
+vector<float> DiffLayerSizeConv::get_derivatives() const
+{
+  vector<float> res(grad_weight.size() + grad_bias.size());
+  copy(grad_weight.data(), grad_weight.data() + grad_weight.size(), res.begin());
+  copy(grad_bias.data(), grad_bias.data() + grad_bias.size(),
+            res.begin() + grad_weight.size());
+  return res;
 }
 
 void DiffLayerSizeConv::backward(const Matrix &bottom, const Matrix &grad_top)
@@ -60,31 +75,4 @@ void DiffLayerSizeConv::backward(const Matrix &bottom, const Matrix &grad_top)
 
 void DiffLayerSizeConv::update(Optimizer &opt)
 {
-}
-
-std::vector<float> DiffLayerSizeConv::get_parameters() const
-{
-  std::vector<float> res(weight.size() + bias.size());
-  // Copy the data of weights and bias to a long vector
-  std::copy(weight.data(), weight.data() + weight.size(), res.begin());
-  std::copy(bias.data(), bias.data() + bias.size(), res.begin() + weight.size());
-  return res;
-}
-
-void DiffLayerSizeConv::set_parameters(const std::vector<float> &param)
-{
-  if (static_cast<int>(param.size()) != weight.size() + bias.size())
-    throw std::invalid_argument("Parameter size does not match");
-  std::copy(param.begin(), param.begin() + weight.size(), weight.data());
-  std::copy(param.begin() + weight.size(), param.end(), bias.data());
-}
-
-std::vector<float> DiffLayerSizeConv::get_derivatives() const
-{
-  std::vector<float> res(grad_weight.size() + grad_bias.size());
-  // Copy the data of weights and bias to a long vector
-  std::copy(grad_weight.data(), grad_weight.data() + grad_weight.size(), res.begin());
-  std::copy(grad_bias.data(), grad_bias.data() + grad_bias.size(),
-            res.begin() + grad_weight.size());
-  return res;
 }

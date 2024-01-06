@@ -3,12 +3,14 @@
 
 #include <fstream>
 #include <iostream>
+
+using namespace std;
 #include <string>
 #include "../utils.h"
 
 class FASHION_MNIST {
  private:
-  std::string data_dir;
+  string data_dir;
 
  public:
   Matrix train_data;
@@ -16,10 +18,10 @@ class FASHION_MNIST {
   Matrix test_data;
   Matrix test_labels;
 
-  void read_mnist_data(std::string filename, Matrix& data);
-  void read_mnist_label(std::string filename, Matrix& labels);
+  void read_mnist_data(string filename, Matrix& data);
+  void read_mnist_label(string filename, Matrix& labels);
 
-  explicit FASHION_MNIST(std::string data_dir) : data_dir(data_dir) {}
+  explicit FASHION_MNIST(string data_dir) : data_dir(data_dir) {}
   void read();
 };
 
