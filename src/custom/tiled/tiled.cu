@@ -2,35 +2,21 @@
 #include <iostream>
 #include "gpu_tiled.h"
 
-using namespace std;
+#define cudaErrChk(stmt) \
+  { cudaAssert((stmt), __FILE__, __LINE__); }
 
-#include "gpu_restrict_unroll.h"
-
-#define CHECK(call)\
-{\
-	const cudaError_t error = call;\
-	if (error != cudaSuccess)\
-	{\
-		fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);\
-		fprintf(stderr, "code: %d, reason: %s\n", error,\
-				cudaGetErrorString(error));\
-		exit(EXIT_FAILURE);\
-	}\
+inline void cudaAssert(cudaError_t error,
+                       const char* file,
+                       int line,
+                       bool abort = true) {
+  if (error != cudaSuccess) {
+    std::cerr << "CUDA error: "
+              << cudaGetErrorString(error) << ' ' << file << ':' << line << std::endl;
+    if (abort) {
+      exit(error);
+    }
+  }
 }
-
-__host__ void GPUTiledInterface::get_device_properties() {
-    cudaDeviceProp devProv;
-    cudaGetDeviceProperties(&devProv, 0);
-    printf("**********GPU info**********\n");
-    printf("Name: %s\n", devProv.name);
-    printf("Compute capability: %d.%d\n", devProv.major, devProv.minor);
-    printf("Num SMs: %d\n", devProv.multiProcessorCount);
-    printf("Max num threads per SM: %d\n", devProv.maxThreadsPerMultiProcessor); 
-    printf("Max num warps per SM: %d\n", devProv.maxThreadsPerMultiProcessor / devProv.warpSize);
-    printf("GMEM: %lu bytes\n", devProv.totalGlobalMem);
-    printf("****************************\n\n");
-}
-
 
 // allocate maximal possible kernel size and reuse it between op1/2
 #define M_MAX 16
@@ -146,7 +132,7 @@ __host__ void GPUTiledInterface::conv_forward_gpu_prolog(const float* host_y,
                                                     const int H,
                                                     const int W,
                                                     const int K) {
-  // cout << "*** constant memory + tiled shared memory ***" << endl;
+  // std::cout << "*** constant memory + tiled shared memory ***" << std::endl;
 
   const int H_out = H - K + 1;
   const int W_out = W - K + 1;
@@ -218,4 +204,35 @@ __host__ void GPUTiledInterface::conv_forward_gpu_epilog(float* host_y,
   // Free device memory
   cudaErrChk(cudaFree(device_y));
   cudaErrChk(cudaFree(device_x));
+}
+
+__host__ void GPUTiledInterface::get_device_properties() {
+  int deviceCount;
+  cudaGetDeviceCount(&deviceCount);
+
+  for (int dev = 0; dev < deviceCount; dev++) {
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, dev);
+
+    std::cout << "Device " << dev << " name: " << deviceProp.name << std::endl;
+    std::cout << "Computational capabilities: "
+              << deviceProp.major << "." << deviceProp.minor << std::endl;
+    std::cout << "Max Global memory size: " << deviceProp.totalGlobalMem
+              << std::endl;
+    std::cout << "Max Constant memory size: " << deviceProp.totalConstMem
+              << std::endl;
+    std::cout << "Max Shared memory size per block: " << deviceProp.sharedMemPerBlock
+              << std::endl;
+    std::cout << "Max threads per block: " << deviceProp.maxThreadsPerBlock
+              << std::endl;
+    std::cout << "Max block dimensions: "
+              << deviceProp.maxThreadsDim[0] << " x, "
+              << deviceProp.maxThreadsDim[1] << " y, "
+              << deviceProp.maxThreadsDim[2] << " z" << std::endl;
+    std::cout << "Max grid dimensions: "
+              << deviceProp.maxGridSize[0] << " x, "
+              << deviceProp.maxGridSize[1] << " y, "
+              << deviceProp.maxGridSize[2] << " z" << std::endl;
+    std::cout << "Warp Size: " << deviceProp.warpSize << std::endl;
+  }
 }
