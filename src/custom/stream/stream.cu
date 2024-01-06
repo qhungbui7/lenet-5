@@ -374,34 +374,3 @@ __host__ void GPUStreamInterface::conv_forward_gpu_epilog(float* host_y,
   CHECK(cudaHostUnregister(device_x));
 #endif
 }
-
-__host__ void GPUStreamInterface::get_device_properties() {
-  int deviceCount;
-  cudaGetDeviceCount(&deviceCount);
-
-  for (int dev = 0; dev < deviceCount; dev++) {
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, dev);
-
-    cout << "Device " << dev << " name: " << deviceProp.name << endl;
-    cout << "Computational capabilities: "
-              << deviceProp.major << "." << deviceProp.minor << endl;
-    cout << "Max Global memory size: " << deviceProp.totalGlobalMem
-              << endl;
-    cout << "Max Constant memory size: " << deviceProp.totalConstMem
-              << endl;
-    cout << "Max Shared memory size per block: " << deviceProp.sharedMemPerBlock
-              << endl;
-    cout << "Max threads per block: " << deviceProp.maxThreadsPerBlock
-              << endl;
-    cout << "Max block dimensions: "
-              << deviceProp.maxThreadsDim[0] << " x, "
-              << deviceProp.maxThreadsDim[1] << " y, "
-              << deviceProp.maxThreadsDim[2] << " z" << endl;
-    cout << "Max grid dimensions: "
-              << deviceProp.maxGridSize[0] << " x, "
-              << deviceProp.maxGridSize[1] << " y, "
-              << deviceProp.maxGridSize[2] << " z" << endl;
-    cout << "Warp Size: " << deviceProp.warpSize << endl;
-  }
-}
