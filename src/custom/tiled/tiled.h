@@ -1,5 +1,5 @@
-#ifndef _SRC_TILED_H_
-#define _SRC_TILED_H_
+#ifndef SRC_TILED_H_
+#define SRC_TILED_H_
 
 #include <vector>
 #include <chrono>
@@ -8,8 +8,7 @@
 #include "gpu_tiled.h"
 // #include "./hide/gpu-utils.h"
 
-
-class TiledConvolution : public Layer
+class Tiled : public Layer
 {
 private:
      const int dim_in;
@@ -33,14 +32,14 @@ private:
      Matrix grad_weight; // gradient w.r.t weight
      Vector grad_bias;   // gradient w.r.t bias
 
-     vector<Matrix> data_cols;
+     std::vector<Matrix> data_cols;
 
      GPUTiledInterface gpuInterface;
 
      void init();
 
 public:
-     TiledConvolution(int channel_in, int height_in, int width_in, int channel_out,
+     Tiled(int channel_in, int height_in, int width_in, int channel_out,
                int height_kernel, int width_kernel, int stride = 1, int pad_w = 0,
                int pad_h = 0) : dim_in(channel_in * height_in * width_in),
                                 channel_in(channel_in), height_in(height_in), width_in(width_in),
@@ -54,9 +53,9 @@ public:
      void backward(const Matrix &bottom, const Matrix &grad_top);
      void update(Optimizer &opt);
      int output_dim() { return dim_out; }
-     vector<float> get_parameters() const;
-     vector<float> get_derivatives() const;
-     void set_parameters(const vector<float> &param);
+     std::vector<float> get_parameters() const;
+     std::vector<float> get_derivatives() const;
+     void set_parameters(const std::vector<float> &param);
 };
 
 #endif
