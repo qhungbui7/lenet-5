@@ -5,20 +5,29 @@ using namespace std;
 
 #include "gpu_restrict_unroll.h"
 
-#define cudaErrChk(stmt) \
-  { cudaAssert((stmt), __FILE__, __LINE__); }
+#define CHECK(call)\
+{\
+	const cudaError_t error = call;\
+	if (error != cudaSuccess)\
+	{\
+		fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);\
+		fprintf(stderr, "code: %d, reason: %s\n", error,\
+				cudaGetErrorString(error));\
+		exit(EXIT_FAILURE);\
+	}\
+}
 
-inline void cudaAssert(cudaError_t error,
-                       const char* file,
-                       int line,
-                       bool abort = true) {
-  if (error != cudaSuccess) {
-    cerr << "CUDA error: "
-              << cudaGetErrorString(error) << ' ' << file << ':' << line << endl;
-    if (abort) {
-      exit(error);
-    }
-  }
+__host__ void GPURestrictUnrollInterface::get_device_properties() {
+    cudaDeviceProp devProv;
+    cudaGetDeviceProperties(&devProv, 0);
+    printf("**********GPU info**********\n");
+    printf("Name: %s\n", devProv.name);
+    printf("Compute capability: %d.%d\n", devProv.major, devProv.minor);
+    printf("Num SMs: %d\n", devProv.multiProcessorCount);
+    printf("Max num threads per SM: %d\n", devProv.maxThreadsPerMultiProcessor); 
+    printf("Max num warps per SM: %d\n", devProv.maxThreadsPerMultiProcessor / devProv.warpSize);
+    printf("GMEM: %lu bytes\n", devProv.totalGlobalMem);
+    printf("****************************\n\n");
 }
 
 // allocate maximal possible kernel size and reuse it between op1/2
@@ -148,12 +157,12 @@ __host__ void GPURestrictUnrollInterface::conv_forward_gpu_prolog(const float* h
   // printf("(B=%d, M=%d, C=%d, H=%d, W=%d, K=%d)\n", B, M, C, H, W, K);
 
   // Allocate memory
-  cudaErrChk(cudaMalloc(device_y_ptr, bytes_y));
-  cudaErrChk(cudaMalloc(device_x_ptr, bytes_x));
+  CHECK(cudaMalloc(device_y_ptr, bytes_y));
+  CHECK(cudaMalloc(device_x_ptr, bytes_x));
 
   // Copy over the relevant data structures to the GPU
-  cudaErrChk(cudaMemcpy(*device_x_ptr, host_x, bytes_x, cudaMemcpyHostToDevice));
-  cudaErrChk(cudaMemcpyToSymbol(kernel, host_k, bytes_k));
+  CHECK(cudaMemcpy(*device_x_ptr, host_x, bytes_x, cudaMemcpyHostToDevice));
+  CHECK(cudaMemcpyToSymbol(kernel, host_k, bytes_k));
 }
 
 __host__ void GPURestrictUnrollInterface::conv_forward_gpu(float* device_y,
@@ -177,16 +186,13 @@ __host__ void GPURestrictUnrollInterface::conv_forward_gpu(float* device_y,
   dim3 grid(ceil((float)W_out / TILE_WIDTH),
             ceil((float)H_out / TILE_WIDTH),
             ceil((float)B / B_batch));
-  // printf("grid=(x=%d, y=%d, z=%d), block=(x=%d, y=%d, z=%d)\n",
-  //        grid.x, grid.y, grid.z, block.x, block.y, block.z);
 
-  // Determine shared memory size
   size_t smem_size =
       B_batch * C * PADDED_TILE_WIDTH * PADDED_TILE_WIDTH * sizeof(float);
 
   // Call the kernel
   conv_forward_kernel<<<grid, block, smem_size>>>(device_y, device_x, B, M, C, H, W, K);
-  cudaErrChk(cudaDeviceSynchronize());
+  CHECK(cudaDeviceSynchronize());
 }
 
 __host__ void GPURestrictUnrollInterface::conv_forward_gpu_epilog(float* host_y,
@@ -204,40 +210,9 @@ __host__ void GPURestrictUnrollInterface::conv_forward_gpu_epilog(float* host_y,
   const size_t bytes_y = (B * M * H_out * W_out) * sizeof(float);
 
   // Copy the output back to host
-  cudaErrChk(cudaMemcpy(host_y, device_y, bytes_y, cudaMemcpyDeviceToHost));
+  CHECK(cudaMemcpy(host_y, device_y, bytes_y, cudaMemcpyDeviceToHost));
 
   // Free device memory
-  cudaErrChk(cudaFree(device_y));
-  cudaErrChk(cudaFree(device_x));
-}
-
-__host__ void GPURestrictUnrollInterface::get_device_properties() {
-  int deviceCount;
-  cudaGetDeviceCount(&deviceCount);
-
-  for (int dev = 0; dev < deviceCount; dev++) {
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, dev);
-
-    cout << "Device " << dev << " name: " << deviceProp.name << endl;
-    cout << "Computational capabilities: "
-              << deviceProp.major << "." << deviceProp.minor << endl;
-    cout << "Max Global memory size: " << deviceProp.totalGlobalMem
-              << endl;
-    cout << "Max Constant memory size: " << deviceProp.totalConstMem
-              << endl;
-    cout << "Max Shared memory size per block: " << deviceProp.sharedMemPerBlock
-              << endl;
-    cout << "Max threads per block: " << deviceProp.maxThreadsPerBlock
-              << endl;
-    cout << "Max block dimensions: "
-              << deviceProp.maxThreadsDim[0] << " x, "
-              << deviceProp.maxThreadsDim[1] << " y, "
-              << deviceProp.maxThreadsDim[2] << " z" << endl;
-    cout << "Max grid dimensions: "
-              << deviceProp.maxGridSize[0] << " x, "
-              << deviceProp.maxGridSize[1] << " y, "
-              << deviceProp.maxGridSize[2] << " z" << endl;
-    cout << "Warp Size: " << deviceProp.warpSize << endl;
-  }
+  CHECK(cudaFree(device_y));
+  CHECK(cudaFree(device_x));
 }

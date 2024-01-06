@@ -5,20 +5,29 @@
 
 using namespace std;
 
-#define cudaErrChk(stmt) \
-  { cudaAssert((stmt), __FILE__, __LINE__); }
+#define CHECK(call)\
+{\
+	const cudaError_t error = call;\
+	if (error != cudaSuccess)\
+	{\
+		fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);\
+		fprintf(stderr, "code: %d, reason: %s\n", error,\
+				cudaGetErrorString(error));\
+		exit(EXIT_FAILURE);\
+	}\
+}
 
-inline void cudaAssert(cudaError_t error,
-                       const char* file,
-                       int line,
-                       bool abort = true) {
-  if (error != cudaSuccess) {
-    cerr << "CUDA error: "
-              << cudaGetErrorString(error) << ' ' << file << ':' << line << endl;
-    if (abort) {
-      exit(error);
-    }
-  }
+__host__ void GPUStreamInterface::get_device_properties() {
+    cudaDeviceProp devProv;
+    cudaGetDeviceProperties(&devProv, 0);
+    printf("**********GPU info**********\n");
+    printf("Name: %s\n", devProv.name);
+    printf("Compute capability: %d.%d\n", devProv.major, devProv.minor);
+    printf("Num SMs: %d\n", devProv.multiProcessorCount);
+    printf("Max num threads per SM: %d\n", devProv.maxThreadsPerMultiProcessor); 
+    printf("Max num warps per SM: %d\n", devProv.maxThreadsPerMultiProcessor / devProv.warpSize);
+    printf("GMEM: %lu bytes\n", devProv.totalGlobalMem);
+    printf("****************************\n\n");
 }
 
 // Some feature flags
@@ -157,23 +166,23 @@ __host__ void GPUStreamInterface::conv_forward_gpu_prolog(const float* host_y,
 
 #ifndef USE_STREAM
   // Allocate memory on device
-  cudaErrChk(cudaMalloc(device_y_ptr, bytes_y));
-  cudaErrChk(cudaMalloc(device_x_ptr, bytes_x));
+  CHECK(cudaMalloc(device_y_ptr, bytes_y));
+  CHECK(cudaMalloc(device_x_ptr, bytes_x));
 
   // Copy input data to device
-  cudaErrChk(cudaMemcpy(*device_x_ptr, host_x, bytes_x, cudaMemcpyHostToDevice));
+  CHECK(cudaMemcpy(*device_x_ptr, host_x, bytes_x, cudaMemcpyHostToDevice));
 #else
   // Pass through host pointers
   *device_y_ptr = (float*)host_y;
   *device_x_ptr = (float*)host_x;
 
   // Mark them as pinned memory for asynchronous transfer
-  cudaErrChk(cudaHostRegister(*device_y_ptr, bytes_y, cudaHostRegisterPortable));
-  cudaErrChk(cudaHostRegister(*device_x_ptr, bytes_x, cudaHostRegisterPortable));
+  CHECK(cudaHostRegister(*device_y_ptr, bytes_y, cudaHostRegisterPortable));
+  CHECK(cudaHostRegister(*device_x_ptr, bytes_x, cudaHostRegisterPortable));
 #endif
 
   // Copy kernel weights
-  cudaErrChk(cudaMemcpyToSymbol(kernel, host_k, bytes_k));
+  CHECK(cudaMemcpyToSymbol(kernel, host_k, bytes_k));
 }
 
 __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
@@ -201,7 +210,7 @@ __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
   const int n_streams = 8;
   cudaStream_t stream[n_streams];
   for (int i = 0; i < n_streams; i++) {
-    cudaErrChk(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
+    CHECK(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
   }
 
   // We pass through host pointers from the prolog function
@@ -219,8 +228,8 @@ __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
   const int n_x_stream = B * C * H * W;
 
 #ifndef USE_ASYNC_ALLOCATOR
-  cudaErrChk(cudaMalloc(&device_y, bytes_y));
-  cudaErrChk(cudaMalloc(&device_x, bytes_x));
+  CHECK(cudaMalloc(&device_y, bytes_y));
+  CHECK(cudaMalloc(&device_x, bytes_x));
 
   // Copy over the relevant data structures to the GPU
   for (int i = 0; i < n_streams; i++) {
@@ -230,7 +239,7 @@ __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
       // Last stream does not need to copy that much
       bytes = (n_x - offset) * sizeof(float);
     }
-    cudaErrChk(cudaMemcpyAsync((void*)&device_x[offset], (void*)&host_x[offset], bytes,
+    CHECK(cudaMemcpyAsync((void*)&device_x[offset], (void*)&host_x[offset], bytes,
                                cudaMemcpyHostToDevice, stream[i]));
   }
 #else // USE_ASYNC_ALLOCATOR
@@ -244,10 +253,10 @@ __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
       // Last stream does not need to copy that much
       bytes = (n_x - offset) * sizeof(float);
     }
-    cudaErrChk(cudaMallocAsync(&device_x_stream[i], bytes, stream[i]));
+    CHECK(cudaMallocAsync(&device_x_stream[i], bytes, stream[i]));
 
     // Copy over that chunk from host
-    cudaErrChk(cudaMemcpyAsync(&device_x_stream[i], &host_x[offset], bytes,
+    CHECK(cudaMemcpyAsync(&device_x_stream[i], &host_x[offset], bytes,
                                cudaMemcpyHostToDevice, stream[i]));
   }
 
@@ -259,7 +268,7 @@ __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
       // Last stream does not need to copy that much
       bytes = (n_y - offset) * sizeof(float);
     }
-    cudaErrChk(cudaMallocAsync(&device_y_stream[i], bytes, stream[i]));
+    CHECK(cudaMallocAsync(&device_y_stream[i], bytes, stream[i]));
   }
 #endif // USE_ASYNC_ALLOCATOR
 #endif // USE_STREAM
@@ -282,7 +291,7 @@ __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
   // Call the kernel
 #ifndef USE_STREAM
   conv_forward_kernel<<<grid, block, smem_size>>>(device_y, device_x, B, M, C, H, W, K);
-  cudaErrChk(cudaDeviceSynchronize());
+  CHECK(cudaDeviceSynchronize());
 #else // USE_STREAM
   for (int i = 0; i < n_streams; i++) {
 #ifndef USE_ASYNC_ALLOCATOR
@@ -302,7 +311,7 @@ __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
   /*** Epilog BEGIN ***/
 #ifndef USE_STREAM
   // We directly wait for the single kernel to end
-  cudaErrChk(cudaDeviceSynchronize());
+  CHECK(cudaDeviceSynchronize());
 #else
   // Copy back data to host
   for (int i = 0; i < n_streams; i++) {
@@ -313,24 +322,24 @@ __host__ void GPUStreamInterface::conv_forward_gpu(float* device_y,
       bytes = (n_y - offset) * sizeof(float);
     }
 #ifndef USE_ASYNC_ALLOCATOR
-    cudaErrChk(cudaMemcpyAsync(&host_y[offset], &device_y[offset], bytes,
+    CHECK(cudaMemcpyAsync(&host_y[offset], &device_y[offset], bytes,
                                cudaMemcpyDeviceToHost, stream[i]));
 #else // USE_ASYNC_ALLOCATOR
-    cudaErrChk(cudaMemcpyAsync(&host_y[offset], device_y_stream[i], bytes,
+    CHECK(cudaMemcpyAsync(&host_y[offset], device_y_stream[i], bytes,
                                cudaMemcpyDeviceToHost, stream[i]));
 
     // Free segments for current stream
-    cudaErrChk(cudaFreeAsync(device_y_stream[i], stream[i]));
-    cudaErrChk(cudaFreeAsync(device_x_stream[i], stream[i]));
+    CHECK(cudaFreeAsync(device_y_stream[i], stream[i]));
+    CHECK(cudaFreeAsync(device_x_stream[i], stream[i]));
 #endif // USE_ASYNC_ALLOCATOR
   }
 
   // Need to wait every stream to finish before destory all streams
-  cudaErrChk(cudaDeviceSynchronize());
+  CHECK(cudaDeviceSynchronize());
 
   // Destory streams
   for (int i = 0; i < n_streams; i++) {
-    cudaErrChk(cudaStreamDestroy(stream[i]));
+    CHECK(cudaStreamDestroy(stream[i]));
   }
 #endif
   /*** Epilog END ***/
@@ -352,17 +361,17 @@ __host__ void GPUStreamInterface::conv_forward_gpu_epilog(float* host_y,
   const size_t bytes_y = (B * M * H_out * W_out) * sizeof(float);
 
   // Copy output back to host
-  cudaErrChk(cudaMemcpy(host_y, device_y, bytes_y, cudaMemcpyDeviceToHost));
+  CHECK(cudaMemcpy(host_y, device_y, bytes_y, cudaMemcpyDeviceToHost));
 
   // Free device memory
-  cudaErrChk(cudaFree(device_y));
-  cudaErrChk(cudaFree(device_x));
+  CHECK(cudaFree(device_y));
+  CHECK(cudaFree(device_x));
 #else
   // Data is already write back to host earlier, safe to clean up now
 
   // Release pinned memory
-  cudaErrChk(cudaHostUnregister(device_y));
-  cudaErrChk(cudaHostUnregister(device_x));
+  CHECK(cudaHostUnregister(device_y));
+  CHECK(cudaHostUnregister(device_x));
 #endif
 }
 

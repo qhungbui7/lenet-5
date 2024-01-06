@@ -6,25 +6,34 @@ __constant__ float Mask[6000];
 
 using namespace std;
 
+
+#define CHECK(call)\
+{\
+	const cudaError_t error = call;\
+	if (error != cudaSuccess)\
+	{\
+		fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);\
+		fprintf(stderr, "code: %d, reason: %s\n", error,\
+				cudaGetErrorString(error));\
+		exit(EXIT_FAILURE);\
+	}\
+}
+
+__host__ void GPUReductionTreeInterface::get_device_properties() {
+    cudaDeviceProp devProv;
+    CHECK(cudaGetDeviceProperties(&devProv, 0));
+    printf("**********GPU info**********\n");
+    printf("Name: %s\n", devProv.name);
+    printf("Compute capability: %d.%d\n", devProv.major, devProv.minor);
+    printf("Num SMs: %d\n", devProv.multiProcessorCount);
+    printf("Max num threads per SM: %d\n", devProv.maxThreadsPerMultiProcessor); 
+    printf("Max num warps per SM: %d\n", devProv.maxThreadsPerMultiProcessor / devProv.warpSize);
+    printf("GMEM: %lu bytes\n", devProv.totalGlobalMem);
+    printf("****************************\n\n");
+}
 __global__ void conv_forward_kernel(float *y, const float *x, const float *k, const int B, const int M, const int C, const int H, const int W, const int K)
 {
-    /*
-    Modify this function to implement the forward pass described in Chapter 16.
-    We have added an additional dimension to the tensors to support an entire mini-batch
-    The goal here is to be correct AND fast.
 
-    Function paramter definitions:
-    y - output
-    x - input
-    k - kernel
-    B - batch_size (number of images in x)
-    M - number of output feature maps
-    C - number of input feature maps
-    H - input height dimension
-    W - input width dimension
-    K - kernel height and width (K x K)
-    */
-    
     const int H_out = H - K + 1;
     const int W_out = W - K + 1;
     extern __shared__ float SM[];
@@ -81,10 +90,6 @@ __global__ void conv_forward_kernel(float *y, const float *x, const float *k, co
         }
 
     }
-    
-
-
-
 
 
 #undef y4d
@@ -97,12 +102,10 @@ __global__ void conv_forward_kernel(float *y, const float *x, const float *k, co
 __host__ void GPUReductionTreeInterface::conv_forward_gpu_prolog(const float *host_y, const float *host_x, const float *host_k, float **device_y_ptr, float **device_x_ptr, float **device_k_ptr, const int B, const int M, const int C, const int H, const int W, const int K)
 {
 
-    cudaMalloc((void **) device_y_ptr, (B * M * (H - K + 1) * (W - K + 1))*sizeof(float));
-    cudaMalloc((void **) device_x_ptr, (B * C * H * W)*sizeof(float));
-    //cudaMalloc((void **) device_k_ptr, (M * C * K * K)*sizeof(float));
-    cudaMemcpy(*device_x_ptr, host_x, (B * C * H * W)*sizeof(float), cudaMemcpyHostToDevice);
-    //cudaMemcpy(*device_k_ptr, host_k, (M * C * K * K)*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpyToSymbol(Mask, host_k, (M * C * K * K)*sizeof(float));
+    CHECK(cudaMalloc((void **) device_y_ptr, (B * M * (H - K + 1) * (W - K + 1))*sizeof(float)));
+    CHECK(cudaMalloc((void **) device_x_ptr, (B * C * H * W)*sizeof(float)));
+    CHECK(cudaMemcpy(*device_x_ptr, host_x, (B * C * H * W)*sizeof(float), cudaMemcpyHostToDevice));
+    CHECK(cudaMemcpyToSymbol(Mask, host_k, (M * C * K * K)*sizeof(float)));
 
 }
 
@@ -118,33 +121,8 @@ __host__ void GPUReductionTreeInterface::conv_forward_gpu(float *device_y, const
 
 __host__ void GPUReductionTreeInterface::conv_forward_gpu_epilog(float *host_y, float *device_y, float *device_x, float *device_k, const int B, const int M, const int C, const int H, const int W, const int K)
 {
-    // Copy the output back to host
-    cudaMemcpy(host_y, device_y, (B * M * (H - K + 1) * (W - K + 1))*sizeof(float), cudaMemcpyDeviceToHost);
-    // Free device memory
-    cudaFree(device_y);
-    cudaFree(device_x);
-    //cudaFree(device_k);
+    CHECK(cudaMemcpy(host_y, device_y, (B * M * (H - K + 1) * (W - K + 1))*sizeof(float), cudaMemcpyDeviceToHost));
+    CHECK(cudaFree(device_y));
+    CHECK(cudaFree(device_x));
 }
 
-
-__host__ void GPUReductionTreeInterface::get_device_properties()
-{
-    int deviceCount;
-    cudaGetDeviceCount(&deviceCount);
-
-    for(int dev = 0; dev < deviceCount; dev++)
-    {
-        cudaDeviceProp deviceProp;
-        cudaGetDeviceProperties(&deviceProp, dev);
-
-        cout<<"Device "<<dev<<" name: "<<deviceProp.name<<endl;
-        cout<<"Computational capabilities: "<<deviceProp.major<<"."<<deviceProp.minor<<endl;
-        cout<<"Max Global memory size: "<<deviceProp.totalGlobalMem<<endl;
-        cout<<"Max Constant memory size: "<<deviceProp.totalConstMem<<endl;
-        cout<<"Max Shared memory size per block: "<<deviceProp.sharedMemPerBlock<<endl;
-        cout<<"Max threads per block: "<<deviceProp.maxThreadsPerBlock<<endl;
-        cout<<"Max block dimensions: "<<deviceProp.maxThreadsDim[0]<<" x, "<<deviceProp.maxThreadsDim[1]<<" y, "<<deviceProp.maxThreadsDim[2]<<" z"<<endl;
-        cout<<"Max grid dimensions: "<<deviceProp.maxGridSize[0]<<" x, "<<deviceProp.maxGridSize[1]<<" y, "<<deviceProp.maxGridSize[2]<<" z"<<endl;
-        cout<<"Warp Size: "<<deviceProp.warpSize<<endl;
-    }
-}
