@@ -2,8 +2,6 @@
 #include <iostream>
 #include "gpu_tiled.h"
 
-using namespace std;
-
 #define CHECK(call)\
 {\
 	const cudaError_t error = call;\

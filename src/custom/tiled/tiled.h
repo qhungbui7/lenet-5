@@ -8,7 +8,6 @@
 #include "gpu_tiled.h"
 // #include "./hide/gpu-utils.h"
 
-using namespace std;
 
 class Tiled : public Layer
 {
