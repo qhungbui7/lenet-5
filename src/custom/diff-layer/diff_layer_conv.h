@@ -8,6 +8,8 @@
 #include "gpu_diff_layer.h"
 // #include "./hide/gpu-utils.h"
 
+using namespace std;
+
 class DiffLayerSizeConv : public Layer
 {
 private:

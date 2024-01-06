@@ -8,6 +8,9 @@
 #include "gpu_reduction_tree.h"
 // #include "./hide/gpu-utils.h"
 
+using namespace std;
+
+
 class ReductionTreeConv : public Layer
 {
 private:

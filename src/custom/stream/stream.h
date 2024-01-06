@@ -8,6 +8,9 @@
 #include "gpu_stream.h"
 // #include "./hide/gpu-utils.h"
 
+using namespace std;
+
+
 class Stream : public Layer
 {
 private:
