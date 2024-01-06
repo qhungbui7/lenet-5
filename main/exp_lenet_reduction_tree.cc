@@ -96,17 +96,17 @@ int main() {
   // SGD opt(0.001);
   const int n_epoch = 5;
   const int batch_size = 128;
-  // for (int epoch = 0; epoch < n_epoch; epoch ++) {
-  //   // break;
-  //   shuffle_data(dataset.train_data, dataset.train_labels);
+  for (int epoch = 0; epoch < n_epoch; epoch ++) {
+    // break;
+    shuffle_data(dataset.train_data, dataset.train_labels);
 
-  //   lenet5.forward(dataset.test_data);
-  //   float acc = compute_accuracy(lenet5.output(), dataset.test_labels);
-  //   std::cout << std::endl;
-  //   std::cout << epoch + 1 << "-th epoch, test acc: " << acc << std::endl;
-  //   std::cout << std::endl;
-  //   break;
-  // }
+    lenet5.forward(dataset.test_data);
+    float acc = compute_accuracy(lenet5.output(), dataset.test_labels);
+    std::cout << std::endl;
+    std::cout << epoch + 1 << "-th epoch, test acc: " << acc << std::endl;
+    std::cout << std::endl;
+    break;
+  }
 
 
   std::vector<std::vector<float>> weights = lenet5.get_parameters();

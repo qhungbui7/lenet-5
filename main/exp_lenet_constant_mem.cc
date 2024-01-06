@@ -26,7 +26,7 @@ int main() {
   // data
   FASHION_MNIST dataset("../data/fashion-mnist/");
   dataset.read();
-  std::cout << "Newer LeNet-5 implementation" << std::endl;
+  std::cout << "Constant Memory LeNet-5 implementation" << std::endl;
   int n_train = dataset.train_data.cols();
   int dim_in = dataset.train_data.rows();
   std::cout << "mnist train number: " << n_train << std::endl;
