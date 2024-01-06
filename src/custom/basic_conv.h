@@ -53,9 +53,9 @@ public:
      void backward(const Matrix &bottom, const Matrix &grad_top);
      void update(Optimizer &opt);
      int output_dim() { return dim_out; }
-     vector<float> get_parameters() const;
-     vector<float> get_derivatives() const;
-     void set_parameters(const vector<float> &param);
+     Vector<float> get_parameters() const;
+     Vector<float> get_derivatives() const;
+     void set_parameters(const Vector<float> &param);
 };
 
 #endif
