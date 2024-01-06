@@ -3,7 +3,6 @@
 #include <iostream>
 
 using namespace std;
-using std::vector;
 
 void BasicConv::init()
 {

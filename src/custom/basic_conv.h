@@ -8,6 +8,8 @@
 #include "gpu_new_forward.h"
 // #include "./hide/gpu-utils.h"
 
+using namespace std;
+
 class BasicConv : public Layer
 {
 private:
@@ -53,9 +55,9 @@ public:
      void backward(const Matrix &bottom, const Matrix &grad_top);
      void update(Optimizer &opt);
      int output_dim() { return dim_out; }
-     Vector<float> get_parameters() const;
-     Vector<float> get_derivatives() const;
-     void set_parameters(const Vector<float> &param);
+     vector<float> get_parameters() const;
+     vector<float> get_derivatives() const;
+     void set_parameters(const vector<float> &param);
 };
 
 #endif
